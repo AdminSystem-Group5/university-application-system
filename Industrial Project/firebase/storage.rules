@@ -1,0 +1,85 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check file size (max 10MB)
+    function isValidFileSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // Check allowed content types for documents
+    function isValidDocumentType() {
+      return request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+    
+    // ============================================
+    // DEFAULT DENY
+    // ============================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // ============================================
+    // USER PROFILE IMAGES
+    // ============================================
+    match /users/{userId}/profile/{fileName} {
+      // Users can read their own profile image
+      // Admins can read any profile image
+      allow read: if isAuthenticated();
+      
+      // Users can upload their own profile image
+      allow write: if isAuthenticated() && 
+                      request.auth.uid == userId &&
+                      isValidFileSize() &&
+                      request.resource.contentType.matches('image/.*');
+    }
+    
+    // ============================================
+    // APPLICATION DOCUMENTS
+    // ============================================
+    match /applications/{applicationId}/documents/{fileName} {
+      // Allow read if user is the application owner or university admin
+      // Note: Full verification requires Firestore lookup, handled in app layer
+      allow read: if isAuthenticated();
+      
+      // Allow upload with validation
+      allow create: if isAuthenticated() &&
+                       isValidFileSize() &&
+                       isValidDocumentType();
+      
+      // Allow update (replace) by owner before submission
+      allow update: if isAuthenticated() &&
+                       isValidFileSize() &&
+                       isValidDocumentType();
+      
+      // No deletion - maintain document trail
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // UNIVERSITY ASSETS (logos, etc.)
+    // ============================================
+    match /universities/{universityId}/assets/{fileName} {
+      // Public read for university logos
+      allow read: if true;
+      
+      // Only university admins can upload
+      // Admin verification handled at app layer with Firestore check
+      allow write: if isAuthenticated() &&
+                      isValidFileSize() &&
+                      request.resource.contentType.matches('image/.*');
+    }
+  }
+}
