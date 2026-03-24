@@ -6,11 +6,10 @@ import {
   getDocs,
   orderBy,
   query,
+  serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
-
-// keep your existing functions above
 
 export async function getApplicationById(id: string) {
   const db = getFirestoreDb();
@@ -41,27 +40,34 @@ export async function getApplications() {
 
 export async function updateApplicationStatus(
   id: string,
-  newStatus: string
+  newStatus: string,
+  adminInfo?: { uid: string; name: string }
 ) {
   const db = getFirestoreDb();
   const applicationRef = doc(db, "applications", id);
 
+  const snapshot = await getDoc(applicationRef);
+
+  if (!snapshot.exists()) {
+    throw new Error("Application not found");
+  }
+
+  const currentData = snapshot.data();
+  const oldStatus = currentData?.applicationStatus || "Unknown";
+
   await updateDoc(applicationRef, {
     applicationStatus: newStatus,
-    updatedAt: new Date(),
+    updatedAt: serverTimestamp(),
   });
-}
 
-export async function getApplicationNotes(applicationId: string) {
-  const db = getFirestoreDb();
-  const notesRef = collection(db, "applications", applicationId, "notes");
-  const q = query(notesRef, orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-
-  return snapshot.docs.map((docSnap) => ({
-    id: docSnap.id,
-    ...docSnap.data(),
-  }));
+  await addDoc(collection(db, "applications", id, "decisionHistory"), {
+    note: `Status changed from ${oldStatus} to ${newStatus}`,
+    previousStatus: oldStatus,
+    status: newStatus,
+    changedAt: serverTimestamp(),
+    changedBy: adminInfo?.name || "Admin",
+    changedById: adminInfo?.uid || "unknown-admin",
+  });
 }
 
 export async function addApplicationNote(
@@ -75,6 +81,18 @@ export async function addApplicationNote(
     adminId: "admin001",
     adminName: "Anton",
     noteText,
-    createdAt: new Date(),
+    createdAt: serverTimestamp(),
   });
+}
+
+export async function getDecisionHistory(applicationId: string) {
+  const db = getFirestoreDb();
+  const historyRef = collection(db, "applications", applicationId, "decisionHistory");
+  const q = query(historyRef, orderBy("changedAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  }));
 }

@@ -1,109 +1,116 @@
-import { getApplicationById } from "@/lib/applicationService";
-import ApplicationNotes from "@/components/admin/ApplicationNotes";
+"use client";
 
-export default async function ApplicationDetailsPage({ params }) {
-  const resolvedParams = await params;
-  const application = await getApplicationById(resolvedParams.id);
+import { useEffect, useState } from "react";
+import AdminStatsCards from "@/components/admin/AdminStatsCards";
+import AdminFilters from "@/components/admin/AdminFilters";
+import ApplicationsTable from "@/components/admin/ApplicationsTable";
+import {
+  getApplications,
+  updateApplicationStatus,
+} from "@/lib/applicationService";
+import { useAuth } from "@/lib/auth-context";
 
-  if (!application) {
-    return (
-      <main className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-4xl rounded-xl border bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-red-600">
-            Application not found
-          </h1>
-        </div>
-      </main>
-    );
+export default function AdminPage() {
+  const [applications, setApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]);
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [courseFilter, setCourseFilter] = useState("");
+
+  const { firebaseUser, userData, isUniversityAdmin } = useAuth();
+
+  const fetchData = async () => {
+    const data = await getApplications();
+    setApplications(data);
+    setFilteredApplications(data);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    let filtered = [...applications];
+
+    if (search) {
+      filtered = filtered.filter((app) =>
+        app.studentNameLower?.includes(search.toLowerCase())
+      );
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(
+        (app) => app.applicationStatus === statusFilter
+      );
+    }
+
+    if (courseFilter) {
+      filtered = filtered.filter((app) => app.courseName === courseFilter);
+    }
+
+    setFilteredApplications(filtered);
+  }, [search, statusFilter, courseFilter, applications]);
+
+  const handleStatusChange = async (id, newStatus) => {
+  try {
+    if (!firebaseUser) {
+      alert("You must be signed in.");
+      return;
+    }
+
+    await updateApplicationStatus(id, newStatus, {
+      uid: firebaseUser.uid,
+      name:
+        userData?.displayName ||
+        firebaseUser.displayName ||
+        firebaseUser.email ||
+        "Admin",
+    });
+
+    await fetchData();
+    alert("Status updated");
+  } catch (error) {
+    console.error(error);
+    alert("Error updating status");
   }
+};
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-4xl">
-        <div className="rounded-xl border bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Application Details
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Review full application information.
-          </p>
+      <div className="mx-auto max-w-7xl">
+        <h1 className="text-3xl font-bold text-gray-900">
+          University Admin Dashboard
+        </h1>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500">
-                Application ID
-              </h2>
-              <p className="mt-1 text-gray-900">
-                {application.applicationId || application.id}
-              </p>
-            </div>
+        <p className="mt-2 text-gray-600">
+          Manage student applications, review statuses, and track decisions.
+        </p>
 
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500">
-                Current Status
-              </h2>
-              <p className="mt-1 text-gray-900">
-                {application.applicationStatus || "N/A"}
-              </p>
-            </div>
+        <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-semibold">Summary</h2>
+          <AdminStatsCards applications={filteredApplications} />
+        </section>
 
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500">
-                Student Name
-              </h2>
-              <p className="mt-1 text-gray-900">
-                {application.studentName || "N/A"}
-              </p>
-            </div>
+        <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-semibold">Filters</h2>
+          <AdminFilters
+            search={search}
+            setSearch={setSearch}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            courseFilter={courseFilter}
+            setCourseFilter={setCourseFilter}
+          />
+        </section>
 
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500">
-                Student Email
-              </h2>
-              <p className="mt-1 text-gray-900">
-                {application.studentEmail || "N/A"}
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500">
-                Course
-              </h2>
-              <p className="mt-1 text-gray-900">
-                {application.courseName || "N/A"}
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-sm font-semibold text-gray-500">
-                Submitted At
-              </h2>
-              <p className="mt-1 text-gray-900">
-                {application.submittedAt?.toDate
-                  ? application.submittedAt.toDate().toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                    })
-                  : "N/A"}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Personal Statement
-            </h2>
-            <div className="mt-3 rounded-lg border bg-gray-50 p-4">
-              <p className="text-gray-800">
-                {application.personalStatement ||
-                  "No personal statement provided."}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <ApplicationNotes applicationId={application.id} />
+        <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-semibold">Applications</h2>
+          <ApplicationsTable
+            applications={filteredApplications}
+            onStatusChange={handleStatusChange}
+          />
+        </section>
       </div>
     </main>
   );

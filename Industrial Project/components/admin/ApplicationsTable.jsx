@@ -1,5 +1,20 @@
 import Link from "next/link";
 
+function getStatusBadgeClass(status) {
+  switch (status) {
+    case "Submitted":
+      return "bg-blue-100 text-blue-700";
+    case "Under Review":
+      return "bg-yellow-100 text-yellow-800";
+    case "Approved":
+      return "bg-green-100 text-green-700";
+    case "Rejected":
+      return "bg-red-100 text-red-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
+
 export default function ApplicationsTable({
   applications = [],
   onStatusChange,
@@ -53,9 +68,14 @@ export default function ApplicationsTable({
                 </td>
 
                 <td className="px-4 py-3 text-sm">
-                  {app.applicationStatus || "N/A"}
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
+                      app.applicationStatus
+                    )}`}
+                  >
+                    {app.applicationStatus || "N/A"}
+                  </span>
                 </td>
-
                 <td className="px-4 py-3 text-sm">
                   {app.submittedAt?.toDate
                     ? app.submittedAt.toDate().toLocaleDateString("en-GB", {

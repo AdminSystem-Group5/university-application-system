@@ -1,10 +1,24 @@
-export default function AdminStatsCards() {
+export default function AdminStatsCards({ applications = [] }) {
+  const total = applications.length;
+  const submitted = applications.filter(
+    (app) => app.applicationStatus === "Submitted"
+  ).length;
+  const underReview = applications.filter(
+    (app) => app.applicationStatus === "Under Review"
+  ).length;
+  const approved = applications.filter(
+    (app) => app.applicationStatus === "Approved"
+  ).length;
+  const rejected = applications.filter(
+    (app) => app.applicationStatus === "Rejected"
+  ).length;
+
   const stats = [
-    { title: "Total", value: 1 },
-    { title: "Submitted", value: 1 },
-    { title: "Under Review", value: 0 },
-    { title: "Approved", value: 0 },
-    { title: "Rejected", value: 0 },
+    { title: "Total", value: total },
+    { title: "Submitted", value: submitted },
+    { title: "Under Review", value: underReview },
+    { title: "Approved", value: approved },
+    { title: "Rejected", value: rejected },
   ];
 
   return (
