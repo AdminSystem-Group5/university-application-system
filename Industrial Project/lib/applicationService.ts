@@ -41,7 +41,7 @@ export async function getApplications() {
 export async function updateApplicationStatus(
   id: string,
   newStatus: string,
-  adminInfo?: { uid: string; name: string }
+  adminInfo: { uid: string; name: string }
 ) {
   const db = getFirestoreDb();
   const applicationRef = doc(db, "applications", id);
@@ -55,9 +55,58 @@ export async function updateApplicationStatus(
   const currentData = snapshot.data();
   const oldStatus = currentData?.applicationStatus || "Unknown";
 
+  const validTransitions: Record<string, string[]> = {
+  Submitted: [
+    "Submitted",
+    "Under Review",
+    "More Info Required",
+    "Approved",
+    "Rejected",
+  ],
+  "Under Review": [
+    "Submitted",
+    "Under Review",
+    "More Info Required",
+    "Approved",
+    "Rejected",
+  ],
+  "More Info Required": [
+    "Submitted",
+    "Under Review",
+    "More Info Required",
+    "Approved",
+    "Rejected",
+  ],
+  Approved: [
+    "Submitted",
+    "Under Review",
+    "More Info Required",
+    "Approved",
+    "Rejected",
+  ],
+  Rejected: [
+    "Submitted",
+    "Under Review",
+    "More Info Required",
+    "Approved",
+    "Rejected",
+  ],
+};
+
+const allowedNext = validTransitions[oldStatus] || [];
+
+if (!allowedNext.includes(newStatus)) {
+  throw new Error(`Invalid status transition: ${oldStatus} → ${newStatus}`);
+}
+
   await updateDoc(applicationRef, {
     applicationStatus: newStatus,
     updatedAt: serverTimestamp(),
+    reviewedBy: adminInfo.name,
+    reviewedAt: serverTimestamp(),
+    ...(newStatus === "Approved" || newStatus === "Rejected"
+      ? { decisionAt: serverTimestamp() }
+      : {}),
   });
 
   await addDoc(collection(db, "applications", id, "decisionHistory"), {
@@ -65,8 +114,9 @@ export async function updateApplicationStatus(
     previousStatus: oldStatus,
     status: newStatus,
     changedAt: serverTimestamp(),
-    changedBy: adminInfo?.name || "Admin",
-    changedById: adminInfo?.uid || "unknown-admin",
+    changedBy: adminInfo.name,
+    changedById: adminInfo.uid,
+    eventType: "status_change",
   });
 }
 

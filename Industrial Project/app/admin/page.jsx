@@ -18,63 +18,75 @@ export default function AdminPage() {
     firebaseUser,
     userData,
     isUniversityAdmin,
+    isLoading,
     signOut,
   } = useAuth();
 
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
-
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
+  const [updatingId, setUpdatingId] = useState(null);
 
-  // =========================
-  // AUTH PROTECTION
-  // =========================
-
-  useEffect(() => {
-    if (!firebaseUser) {
-      router.push("/login");
-    }
-  }, [firebaseUser, router]);
-
-  useEffect(() => {
-    if (firebaseUser && !isUniversityAdmin) {
-      alert("Access denied. Admins only.");
-      router.push("/login");
-    }
-  }, [firebaseUser, isUniversityAdmin, router]);
-
-  // =========================
-  // LOAD DATA
-  // =========================
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [pageLoading, setPageLoading] = useState(true);
 
   const fetchData = async () => {
     try {
+      setPageLoading(true);
+      setMessage("");
+
       const data = await getApplications();
       setApplications(data);
       setFilteredApplications(data);
     } catch (error) {
       console.error("Error loading applications:", error);
+      setMessage("Failed to load applications.");
+      setMessageType("error");
+    } finally {
+      setPageLoading(false);
     }
   };
 
   useEffect(() => {
-    if (firebaseUser) {
-      fetchData();
-    }
-  }, [firebaseUser]);
+    if (!message) return;
 
-  // =========================
-  // FILTER LOGIC
-  // =========================
+    const timer = setTimeout(() => {
+      setMessage("");
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (!firebaseUser) {
+      router.push("/login");
+      return;
+    }
+
+    if (!isUniversityAdmin) {
+      alert("Access denied. Admins only.");
+      router.push("/login");
+      return;
+    }
+
+    fetchData();
+  }, [isLoading, firebaseUser, isUniversityAdmin, router]);
 
   useEffect(() => {
     let filtered = [...applications];
 
     if (search) {
-      filtered = filtered.filter((app) =>
-        app.studentName?.toLowerCase().includes(search.toLowerCase())
+      const searchLower = search.toLowerCase();
+
+      filtered = filtered.filter(
+        (app) =>
+          app.studentName?.toLowerCase().includes(searchLower) ||
+          app.studentEmail?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -91,16 +103,16 @@ export default function AdminPage() {
     setFilteredApplications(filtered);
   }, [search, statusFilter, courseFilter, applications]);
 
-  // =========================
-  // STATUS UPDATE
-  // =========================
-
   const handleStatusChange = async (id, newStatus) => {
     try {
       if (!firebaseUser) {
-        alert("You must be signed in.");
+        setMessage("You must be signed in.");
+        setMessageType("error");
         return;
       }
+
+      setUpdatingId(id);
+      setMessage("");
 
       await updateApplicationStatus(id, newStatus, {
         uid: firebaseUser.uid,
@@ -112,23 +124,63 @@ export default function AdminPage() {
       });
 
       await fetchData();
-      alert("Status updated");
+      setMessage("Status updated successfully.");
+      setMessageType("success");
     } catch (error) {
       console.error(error);
-      alert("Error updating status");
+      setMessage(error.message || "Error updating status");
+      setMessageType("error");
+    } finally {
+      setUpdatingId(null);
     }
   };
 
-  // =========================
-  // RENDER
-  // =========================
+  if (isLoading || pageLoading) {
+    return (
+      <main className="min-h-screen bg-gray-50 p-6">
+        <div className="mx-auto max-w-7xl animate-pulse">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <div className="h-8 w-80 rounded bg-gray-200" />
+              <div className="mt-3 h-4 w-96 rounded bg-gray-200" />
+            </div>
+            <div className="h-10 w-24 rounded bg-gray-200" />
+          </div>
+
+          <div className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
+            <div className="mb-4 h-6 w-32 rounded bg-gray-200" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-24 rounded-xl bg-gray-100"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
+            <div className="mb-4 h-6 w-24 rounded bg-gray-200" />
+            <div className="flex flex-col gap-4 md:flex-row">
+              <div className="h-10 w-full rounded bg-gray-100 md:w-80" />
+              <div className="h-10 w-full rounded bg-gray-100 md:w-48" />
+              <div className="h-10 w-full rounded bg-gray-100 md:w-48" />
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
+            <div className="mb-4 h-6 w-36 rounded bg-gray-200" />
+            <div className="h-72 rounded bg-gray-100" />
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
-
-        {/* HEADER + LOGOUT */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               University Admin Dashboard
@@ -149,14 +201,23 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* SUMMARY */}
+        {message && (
+          <div
+            className={`mt-6 rounded-lg border px-4 py-3 text-sm ${
+              messageType === "success"
+                ? "border-green-200 bg-green-50 text-green-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+
         <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Summary</h2>
           <AdminStatsCards applications={filteredApplications} />
-          <ApplicationsTable applications={filteredApplications} onStatusChange={handleStatusChange} />
         </section>
 
-        {/* FILTERS */}
         <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Filters</h2>
           <AdminFilters
@@ -169,15 +230,21 @@ export default function AdminPage() {
           />
         </section>
 
-        {/* APPLICATION TABLE */}
         <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">Applications</h2>
-          <ApplicationsTable
-            applications={filteredApplications}
-            onStatusChange={handleStatusChange}
-          />
-        </section>
 
+          {filteredApplications.length === 0 ? (
+            <div className="rounded-lg border border-dashed bg-gray-50 px-6 py-10 text-center text-gray-500">
+              No applications match the current filters.
+            </div>
+          ) : (
+            <ApplicationsTable
+              applications={filteredApplications}
+              onStatusChange={handleStatusChange}
+              updatingId={updatingId}
+            />
+          )}
+        </section>
       </div>
     </main>
   );

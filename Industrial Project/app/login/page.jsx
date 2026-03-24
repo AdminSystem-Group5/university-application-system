@@ -11,20 +11,42 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
 
     try {
       await signIn(email, password);
       router.push("/admin");
     } catch (error) {
       console.error(error);
-      alert("Login failed. Check email and password.");
-    }
 
-    setLoading(false);
+      // 🔥 Firebase-specific error handling
+      switch (error.code) {
+        case "auth/user-not-found":
+          setErrorMessage("No account found with this email.");
+          break;
+        case "auth/wrong-password":
+          setErrorMessage("Incorrect password. Please try again.");
+          break;
+        case "auth/invalid-email":
+          setErrorMessage("Invalid email format.");
+          break;
+        case "auth/invalid-credential":
+          setErrorMessage("Invalid email or password.");
+          break;
+        case "auth/too-many-requests":
+          setErrorMessage("Too many failed attempts. Try again later.");
+          break;
+        default:
+          setErrorMessage("Login failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -34,6 +56,13 @@ export default function LoginPage() {
         <p className="mt-2 text-sm text-gray-600">
           Sign in with your university admin account.
         </p>
+
+        {/* ✅ Error message */}
+        {errorMessage && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {errorMessage}
+          </div>
+        )}
 
         <form onSubmit={handleLogin} className="mt-6 space-y-4">
           <div>

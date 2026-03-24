@@ -6,6 +6,8 @@ function getStatusBadgeClass(status) {
       return "bg-blue-100 text-blue-700";
     case "Under Review":
       return "bg-yellow-100 text-yellow-800";
+    case "More Info Required":
+      return "bg-orange-100 text-orange-700";
     case "Approved":
       return "bg-green-100 text-green-700";
     case "Rejected":
@@ -18,6 +20,7 @@ function getStatusBadgeClass(status) {
 export default function ApplicationsTable({
   applications = [],
   onStatusChange,
+  updatingId,
 }) {
   return (
     <div className="overflow-x-auto">
@@ -48,73 +51,88 @@ export default function ApplicationsTable({
         <tbody>
           {applications.length === 0 ? (
             <tr>
-              <td colSpan="6" className="px-4 py-6 text-center text-sm text-gray-500">
+              <td
+                colSpan="6"
+                className="px-4 py-6 text-center text-sm text-gray-500"
+              >
                 No applications found.
               </td>
             </tr>
           ) : (
-            applications.map((app) => (
-              <tr key={app.id || app.applicationId} className="border-b">
-                <td className="px-4 py-3 text-sm">
-                  {app.applicationId || app.id}
-                </td>
+            applications.map((app) => {
+              const appId = app.id || app.applicationId;
+              const isUpdating = updatingId === appId;
 
-                <td className="px-4 py-3 text-sm">
-                  {app.studentName || "N/A"}
-                </td>
+              return (
+                <tr key={appId} className="border-b">
+                  <td className="px-4 py-3 text-sm">
+                    {app.applicationId || app.id}
+                  </td>
 
-                <td className="px-4 py-3 text-sm">
-                  {app.courseName || "N/A"}
-                </td>
+                  <td className="px-4 py-3 text-sm">
+                    {app.studentName || "N/A"}
+                  </td>
 
-                <td className="px-4 py-3 text-sm">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
-                      app.applicationStatus
-                    )}`}
-                  >
-                    {app.applicationStatus || "N/A"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm">
-                  {app.submittedAt?.toDate
-                    ? app.submittedAt.toDate().toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "long",
-                        year: "numeric",
-                      })
-                    : "N/A"}
-                </td>
+                  <td className="px-4 py-3 text-sm">
+                    {app.courseName || "N/A"}
+                  </td>
 
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    
-                    {/* STATUS DROPDOWN */}
-                    <select
-                      value={app.applicationStatus || "Submitted"}
-                      onChange={(e) =>
-                        onStatusChange?.(app.id, e.target.value)
-                      }
-                      className="rounded-md border px-2 py-1"
+                  <td className="px-4 py-3 text-sm">
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
+                        app.applicationStatus
+                      )}`}
                     >
-                      <option value="Submitted">Submitted</option>
-                      <option value="Under Review">Under Review</option>
-                      <option value="Approved">Approved</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
+                      {app.applicationStatus || "N/A"}
+                    </span>
+                  </td>
 
-                    {/* VIEW BUTTON (FIXED) */}
-                    <Link
-                      href={`/admin/applications/${app.id}`}
-                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
-                    >
-                      View
-                    </Link>
+                  <td className="px-4 py-3 text-sm">
+                    {app.submittedAt?.toDate
+                      ? app.submittedAt.toDate().toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "N/A"}
+                  </td>
 
-                  </div>
-                </td>
-              </tr>
-            ))
+                  <td className="px-4 py-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={app.applicationStatus || "Submitted"}
+                        onChange={(e) =>
+                          onStatusChange?.(appId, e.target.value)
+                        }
+                        disabled={isUpdating}
+                        className="rounded-md border px-2 py-1 disabled:opacity-50"
+                      >
+                        <option value="Submitted">Submitted</option>
+                        <option value="Under Review">Under Review</option>
+                        <option value="More Info Required">
+                          More Info Required
+                        </option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+
+                      <Link
+                        href={`/admin/applications/${appId}`}
+                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
+                      >
+                        View
+                      </Link>
+
+                      {isUpdating && (
+                        <span className="text-xs text-gray-500">
+                          Updating...
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
