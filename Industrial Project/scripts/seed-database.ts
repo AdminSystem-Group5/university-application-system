@@ -30,7 +30,17 @@ const db = getFirestore();
 // SAMPLE DATA
 // ============================================
 
-const universities = [
+type SeedUniversity = {
+  id: string;
+  name: string;
+  contactEmail: string;
+  website: string;
+  adminIds: string[];
+  courses: Array<Record<string, unknown>>;
+  settings: { acceptingApplications: boolean; maxApplicationsPerStudent: number };
+};
+
+const universities: SeedUniversity[] = [
   {
     id: 'uni-solent',
     name: 'Southampton Solent University',

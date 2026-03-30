@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   getDocs,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth-context";
@@ -39,6 +42,10 @@ export default function ApplicationNotes({ applicationId }) {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
 
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editingText, setEditingText] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+
   const { firebaseUser, userData, isUniversityAdmin } = useAuth();
 
   const loadNotes = async () => {
@@ -50,9 +57,9 @@ export default function ApplicationNotes({ applicationId }) {
       const q = query(notesRef, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
 
-      const notesData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      const notesData = snapshot.docs.map((docItem) => ({
+        id: docItem.id,
+        ...docItem.data(),
       }));
 
       setNotes(notesData);
@@ -108,6 +115,7 @@ export default function ApplicationNotes({ applicationId }) {
           firebaseUser.email ||
           "Admin",
         createdAt: serverTimestamp(),
+        updatedAt: null,
         eventType: "admin_note",
       });
 
@@ -121,6 +129,100 @@ export default function ApplicationNotes({ applicationId }) {
       setMessageType("error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartEdit = (item) => {
+    setEditingNoteId(item.id);
+    setEditingText(item.noteText || "");
+    setMessage("");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingNoteId(null);
+    setEditingText("");
+  };
+
+  const handleSaveEdit = async (noteId) => {
+    if (!editingText.trim()) {
+      setMessage("Note cannot be empty.");
+      setMessageType("error");
+      return;
+    }
+
+    if (!firebaseUser || !isUniversityAdmin) {
+      setMessage("Only signed-in admins can edit notes.");
+      setMessageType("error");
+      return;
+    }
+
+    try {
+      setActionLoadingId(noteId);
+      setMessage("");
+
+      const db = getFirestoreDb();
+      const noteRef = doc(db, "applications", applicationId, "notes", noteId);
+
+      await updateDoc(noteRef, {
+        noteText: editingText.trim(),
+        updatedAt: serverTimestamp(),
+        editedBy:
+          userData?.displayName ||
+          firebaseUser.displayName ||
+          firebaseUser.email ||
+          "Admin",
+      });
+
+      setEditingNoteId(null);
+      setEditingText("");
+      await loadNotes();
+      setMessage("Note updated successfully.");
+      setMessageType("success");
+    } catch (error) {
+      console.error(error);
+      setMessage("Error updating note.");
+      setMessageType("error");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!firebaseUser || !isUniversityAdmin) {
+      setMessage("Only signed-in admins can delete notes.");
+      setMessageType("error");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this note?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoadingId(noteId);
+      setMessage("");
+
+      const db = getFirestoreDb();
+      const noteRef = doc(db, "applications", applicationId, "notes", noteId);
+
+      await deleteDoc(noteRef);
+
+      if (editingNoteId === noteId) {
+        setEditingNoteId(null);
+        setEditingText("");
+      }
+
+      await loadNotes();
+      setMessage("Note deleted successfully.");
+      setMessageType("success");
+    } catch (error) {
+      console.error(error);
+      setMessage("Error deleting note.");
+      setMessageType("error");
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -177,7 +279,7 @@ export default function ApplicationNotes({ applicationId }) {
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="rounded-lg border bg-gray-50 p-4 animate-pulse"
+                className="animate-pulse rounded-lg border bg-gray-50 p-4"
               >
                 <div className="h-4 w-3/4 rounded bg-gray-200" />
                 <div className="mt-3 h-3 w-1/3 rounded bg-gray-200" />
@@ -190,21 +292,83 @@ export default function ApplicationNotes({ applicationId }) {
           </div>
         ) : (
           <div className="mt-4 space-y-3">
-            {notes.map((item) => (
-              <div key={item.id} className="rounded-lg border bg-gray-50 p-4">
-                <p className="whitespace-pre-line text-gray-800">
-                  {item.noteText}
-                </p>
+            {notes.map((item) => {
+              const isEditing = editingNoteId === item.id;
+              const isBusy = actionLoadingId === item.id;
 
-                <div className="mt-3 text-xs text-gray-500">
-                  <span className="font-medium">
-                    {item.adminName || "Admin"}
-                  </span>
-                  {" • "}
-                  <span>{formatDateTime(item.createdAt)}</span>
+              return (
+                <div key={item.id} className="rounded-lg border bg-gray-50 p-4">
+                  {isEditing ? (
+                    <>
+                      <textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        className="w-full rounded-lg border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={4}
+                      />
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => handleSaveEdit(item.id)}
+                          disabled={isBusy}
+                          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isBusy ? "Saving..." : "Save"}
+                        </button>
+
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isBusy}
+                          className="rounded-lg bg-gray-200 px-4 py-2 text-gray-800 hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="whitespace-pre-line text-gray-800">
+                        {item.noteText}
+                      </p>
+
+                      <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="text-xs text-gray-500">
+                          <span className="font-medium">
+                            {item.adminName || "Admin"}
+                          </span>
+                          {" • "}
+                          <span>{formatDateTime(item.createdAt)}</span>
+                          {item.updatedAt && (
+                            <>
+                              {" • "}
+                              <span>Edited: {formatDateTime(item.updatedAt)}</span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => handleStartEdit(item)}
+                            disabled={isBusy}
+                            className="rounded-lg bg-amber-500 px-3 py-1.5 text-sm text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteNote(item.id)}
+                            disabled={isBusy}
+                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isBusy ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

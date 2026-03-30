@@ -1,19 +1,46 @@
+"use client";
+
 import Link from "next/link";
+
+const STATUSES = [
+  "Submitted",
+  "Under Review",
+  "More Info Required",
+  "Approved",
+  "Rejected",
+];
 
 function getStatusBadgeClass(status) {
   switch (status) {
     case "Submitted":
-      return "bg-blue-100 text-blue-700";
+      return "bg-slate-100 text-slate-700";
     case "Under Review":
-      return "bg-yellow-100 text-yellow-800";
+      return "bg-blue-100 text-blue-700";
     case "More Info Required":
-      return "bg-orange-100 text-orange-700";
+      return "bg-amber-100 text-amber-800";
     case "Approved":
       return "bg-green-100 text-green-700";
     case "Rejected":
       return "bg-red-100 text-red-700";
     default:
       return "bg-gray-100 text-gray-700";
+  }
+}
+
+function formatDate(value) {
+  if (!value) return "N/A";
+
+  try {
+    const date =
+      typeof value?.toDate === "function" ? value.toDate() : new Date(value);
+
+    return date.toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return "N/A";
   }
 }
 
@@ -64,22 +91,22 @@ export default function ApplicationsTable({
               const isUpdating = updatingId === appId;
 
               return (
-                <tr key={appId} className="border-b">
-                  <td className="px-4 py-3 text-sm">
-                    {app.applicationId || app.id}
+                <tr key={appId} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm text-gray-900">
+                    {app.applicationId || app.id || "N/A"}
                   </td>
 
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-4 py-3 text-sm text-gray-900">
                     {app.studentName || "N/A"}
                   </td>
 
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-4 py-3 text-sm text-gray-900">
                     {app.courseName || "N/A"}
                   </td>
 
                   <td className="px-4 py-3 text-sm">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
                         app.applicationStatus
                       )}`}
                     >
@@ -87,38 +114,30 @@ export default function ApplicationsTable({
                     </span>
                   </td>
 
-                  <td className="px-4 py-3 text-sm">
-                    {app.submittedAt?.toDate
-                      ? app.submittedAt.toDate().toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                        })
-                      : "N/A"}
+                  <td className="px-4 py-3 text-sm text-gray-900">
+                    {formatDate(app.submittedAt)}
                   </td>
 
                   <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <select
                         value={app.applicationStatus || "Submitted"}
                         onChange={(e) =>
                           onStatusChange?.(appId, e.target.value)
                         }
                         disabled={isUpdating}
-                        className="rounded-md border px-2 py-1 disabled:opacity-50"
+                        className="rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        <option value="Submitted">Submitted</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="More Info Required">
-                          More Info Required
-                        </option>
-                        <option value="Approved">Approved</option>
-                        <option value="Rejected">Rejected</option>
+                        {STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
                       </select>
 
                       <Link
                         href={`/admin/applications/${appId}`}
-                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
+                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
                       >
                         View
                       </Link>

@@ -11,7 +11,15 @@ import {
 } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 
-export async function getApplicationById(id: string) {
+const STATUSES = [
+  "Submitted",
+  "Under Review",
+  "More Info Required",
+  "Approved",
+  "Rejected",
+];
+
+export async function getApplicationById(id) {
   const db = getFirestoreDb();
   const applicationRef = doc(db, "applications", id);
   const snapshot = await getDoc(applicationRef);
@@ -38,66 +46,35 @@ export async function getApplications() {
   }));
 }
 
-export async function updateApplicationStatus(
-  id: string,
-  newStatus: string,
-  adminInfo: { uid: string; name: string }
-) {
+export async function updateApplicationStatus(id, newStatus, adminInfo) {
   const db = getFirestoreDb();
   const applicationRef = doc(db, "applications", id);
-
   const snapshot = await getDoc(applicationRef);
 
   if (!snapshot.exists()) {
     throw new Error("Application not found");
   }
 
+  if (!STATUSES.includes(newStatus)) {
+    throw new Error(`Invalid status: ${newStatus}`);
+  }
+
   const currentData = snapshot.data();
   const oldStatus = currentData?.applicationStatus || "Unknown";
 
-  const validTransitions: Record<string, string[]> = {
-  Submitted: [
-    "Submitted",
-    "Under Review",
-    "More Info Required",
-    "Approved",
-    "Rejected",
-  ],
-  "Under Review": [
-    "Submitted",
-    "Under Review",
-    "More Info Required",
-    "Approved",
-    "Rejected",
-  ],
-  "More Info Required": [
-    "Submitted",
-    "Under Review",
-    "More Info Required",
-    "Approved",
-    "Rejected",
-  ],
-  Approved: [
-    "Submitted",
-    "Under Review",
-    "More Info Required",
-    "Approved",
-    "Rejected",
-  ],
-  Rejected: [
-    "Submitted",
-    "Under Review",
-    "More Info Required",
-    "Approved",
-    "Rejected",
-  ],
-};
+  const validTransitions = {
+    Submitted: STATUSES,
+    "Under Review": STATUSES,
+    "More Info Required": STATUSES,
+    Approved: STATUSES,
+    Rejected: STATUSES,
+  };
 
-const allowedNext = validTransitions[oldStatus] || [];
+  const allowedNext = validTransitions[oldStatus] || [];
 
-if (!allowedNext.includes(newStatus)) {
-  throw new Error(`Invalid status transition: ${oldStatus} → ${newStatus}`);
-}
+  if (!allowedNext.includes(newStatus)) {
+    throw new Error(`Invalid status transition: ${oldStatus} → ${newStatus}`);
+  }
 
   await updateDoc(applicationRef, {
     applicationStatus: newStatus,
@@ -120,24 +97,28 @@ if (!allowedNext.includes(newStatus)) {
   });
 }
 
-export async function addApplicationNote(
-  applicationId: string,
-  noteText: string
-) {
+export async function addApplicationNote(applicationId, noteText, adminInfo) {
   const db = getFirestoreDb();
   const notesRef = collection(db, "applications", applicationId, "notes");
 
   await addDoc(notesRef, {
-    adminId: "admin001",
-    adminName: "Anton",
+    adminId: adminInfo.uid,
+    adminName: adminInfo.name,
     noteText,
     createdAt: serverTimestamp(),
+    updatedAt: null,
+    eventType: "admin_note",
   });
 }
 
-export async function getDecisionHistory(applicationId: string) {
+export async function getDecisionHistory(applicationId) {
   const db = getFirestoreDb();
-  const historyRef = collection(db, "applications", applicationId, "decisionHistory");
+  const historyRef = collection(
+    db,
+    "applications",
+    applicationId,
+    "decisionHistory"
+  );
   const q = query(historyRef, orderBy("changedAt", "desc"));
   const snapshot = await getDocs(q);
 

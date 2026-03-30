@@ -122,7 +122,9 @@ export default function ApplicationDetailsPage() {
 
     if (
       ["Approved", "Rejected"].includes(newStatus) &&
-      !window.confirm(`Are you sure you want to mark this application as ${newStatus}?`)
+      !window.confirm(
+        `Are you sure you want to mark this application as ${newStatus}?`
+      )
     ) {
       return;
     }
@@ -229,7 +231,8 @@ export default function ApplicationDetailsPage() {
               Application Details
             </h1>
             <p className="mt-2 text-gray-600">
-              Review full application information, update status, and track admin activity.
+              Review full application information, update status, and track
+              admin activity.
             </p>
           </div>
 

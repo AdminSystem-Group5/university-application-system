@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminFilters from "@/components/admin/AdminFilters";
@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 
 export default function AdminPage() {
   const router = useRouter();
+  const hasFetchedRef = useRef(false);
 
   const {
     firebaseUser,
@@ -23,7 +24,6 @@ export default function AdminPage() {
   } = useAuth();
 
   const [applications, setApplications] = useState([]);
-  const [filteredApplications, setFilteredApplications] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [courseFilter, setCourseFilter] = useState("");
@@ -33,14 +33,13 @@ export default function AdminPage() {
   const [messageType, setMessageType] = useState("success");
   const [pageLoading, setPageLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setPageLoading(true);
       setMessage("");
 
       const data = await getApplications();
-      setApplications(data);
-      setFilteredApplications(data);
+      setApplications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error loading applications:", error);
       setMessage("Failed to load applications.");
@@ -48,7 +47,7 @@ export default function AdminPage() {
     } finally {
       setPageLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (!message) return;
@@ -64,29 +63,34 @@ export default function AdminPage() {
     if (isLoading) return;
 
     if (!firebaseUser) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
     if (!isUniversityAdmin) {
       alert("Access denied. Admins only.");
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
-    fetchData();
-  }, [isLoading, firebaseUser, isUniversityAdmin, router]);
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
 
-  useEffect(() => {
+    fetchData();
+  }, [isLoading, firebaseUser, isUniversityAdmin, router, fetchData]);
+
+  const filteredApplications = useMemo(() => {
     let filtered = [...applications];
 
-    if (search) {
+    if (search.trim()) {
       const searchLower = search.toLowerCase();
 
       filtered = filtered.filter(
         (app) =>
           app.studentName?.toLowerCase().includes(searchLower) ||
-          app.studentEmail?.toLowerCase().includes(searchLower)
+          app.studentEmail?.toLowerCase().includes(searchLower) ||
+          app.courseName?.toLowerCase().includes(searchLower) ||
+          app.applicationId?.toLowerCase().includes(searchLower)
       );
     }
 
@@ -100,8 +104,8 @@ export default function AdminPage() {
       filtered = filtered.filter((app) => app.courseName === courseFilter);
     }
 
-    setFilteredApplications(filtered);
-  }, [search, statusFilter, courseFilter, applications]);
+    return filtered;
+  }, [applications, search, statusFilter, courseFilter]);
 
   const handleStatusChange = async (id, newStatus) => {
     try {
@@ -128,10 +132,21 @@ export default function AdminPage() {
       setMessageType("success");
     } catch (error) {
       console.error(error);
-      setMessage(error.message || "Error updating status");
+      setMessage(error.message || "Error updating status.");
       setMessageType("error");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.replace("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      setMessage("Failed to log out. Please try again.");
+      setMessageType("error");
     }
   };
 
@@ -151,10 +166,7 @@ export default function AdminPage() {
             <div className="mb-4 h-6 w-32 rounded bg-gray-200" />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-24 rounded-xl bg-gray-100"
-                />
+                <div key={index} className="h-24 rounded-xl bg-gray-100" />
               ))}
             </div>
           </div>
@@ -191,10 +203,7 @@ export default function AdminPage() {
           </div>
 
           <button
-            onClick={async () => {
-              await signOut();
-              router.push("/login");
-            }}
+            onClick={handleLogout}
             className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
           >
             Logout
