@@ -3,10 +3,9 @@ import {
   buildApplicationSubmittedEmail,
   buildDecisionEmail,
   buildRegistrationEmail,
-} from "@/lib/email-service";
-import { logEmailEvent } from "../../../functions/src/triggers/logEmailEvent";
-import { sendEmailMock } from "../../../functions/src/utils/smtpClient";
-
+} from "@/lib/services/email-service";
+import { logEmailEvent } from "../../../functions/triggers/logEmailEvent";
+import { sendEmailMock } from "../../../functions/utils/smtpClient";
 
 export async function POST(request) {
   try {

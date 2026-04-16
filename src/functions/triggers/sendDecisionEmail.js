@@ -1,6 +1,6 @@
-import { buildDecisionEmail } from "@/lib/email-service";
-import { sendEmailMock } from "@/functions/src/utils/smtpClient";
-import { logEmailEvent } from "@/functions/src/triggers/logEmailEvent";
+import { buildDecisionEmail } from "@/lib/services/email-service";
+import { sendEmailMock } from "@/functions/utils/smtpClient";
+import { logEmailEvent } from "@/functions/triggers/logEmailEvent";
 
 export function sendDecisionEmail(name, email, status) {
   const html = buildDecisionEmail(name, status);

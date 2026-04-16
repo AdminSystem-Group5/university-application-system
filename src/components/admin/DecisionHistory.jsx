@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDecisionHistory } from "@/lib/applicationService";
+import { getDecisionHistory } from "@/lib/services/applicationService";
 
 function formatDateTime(value) {
   if (!value) return "No date";

@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   getApplicationById,
   updateApplicationStatus,
-} from "@/lib/applicationService";
+} from "@/lib/services/applicationService";
 import ApplicationNotes from "@/components/admin/ApplicationNotes";
 import DecisionHistory from "@/components/admin/DecisionHistory";
 

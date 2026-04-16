@@ -1,6 +1,6 @@
-import { buildApplicationSubmittedEmail } from "@/lib/email-service";
-import { sendEmailMock } from "@/functions/src/utils/smtpClient";
-import { logEmailEvent } from "@/functions/src/triggers/logEmailEvent";
+import { buildApplicationSubmittedEmail } from "@/lib/services/email-service";
+import { sendEmailMock } from "@/functions/utils/smtpClient";
+import { logEmailEvent } from "@/functions/triggers/logEmailEvent";
 
 export function sendApplicationEmail(name, email) {
   const html = buildApplicationSubmittedEmail(name);

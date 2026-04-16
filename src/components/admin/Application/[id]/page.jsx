@@ -1,4 +1,4 @@
-import { getApplicationById } from "@/lib/applicationService";
+import { getApplicationById } from "@/lib/services/applicationService";
 import ApplicationNotes from "@/components/admin/ApplicationNotes";
 
 function formatDate(value) {
