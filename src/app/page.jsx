@@ -1,21 +1,101 @@
-'use client';
+"use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
 
 export default function HomePage() {
   const router = useRouter();
 
+  const [showLogin, setShowLogin] = useState(false);
+
+  /* LOGIN STATES */
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  /* LOGIN FUNCTION */
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    alert("Login button clicked"); // test alert
+
+    setErrorMessage("");
+    setLoading(true);
+
+    try {
+      const auth = getFirebaseAuth();
+      const db = getFirestoreDb();
+
+      const userCredential =
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+      const firebaseUser = userCredential.user;
+
+      const userRef = doc(db, "users", firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        setErrorMessage("User profile not found.");
+        setLoading(false);
+        return;
+      }
+
+      const userData = userSnap.data();
+
+      if (
+        userData.role !== "admin" &&
+        userData.role !== "university_admin"
+      ) {
+        setErrorMessage("Access denied. Admins only.");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/admin");
+
+    } catch (error) {
+
+      console.error("Login error:", error);
+
+      if (error.code === "auth/invalid-credential") {
+        setErrorMessage("Invalid email or password.");
+      } else {
+        setErrorMessage("Login failed.");
+      }
+
+      setLoading(false);
+    }
+  };
+
   return (
-    <main className="home-page">
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "#F7F1E8",
+      }}
+    >
+
+      {/* HEADER */}
 
       <header className="topbar">
         <div className="container topbar-content">
 
           <div className="brand-block">
             <h1 className="logo">UAAMS</h1>
-            <p className="subtitle">
-              University Administration & Application Management System
-            </p>
           </div>
 
           <div className="nav-center">
@@ -36,7 +116,7 @@ export default function HomePage() {
 
           <div className="topbar-actions">
             <button
-              onClick={() => router.push("/login")}
+              onClick={() => setShowLogin(true)}
               className="btn btn-outline"
             >
               LOGIN
@@ -49,238 +129,313 @@ export default function HomePage() {
               REGISTER
             </button>
           </div>
+
         </div>
       </header>
 
-      <section style={{ paddingTop: "24px", paddingBottom: "28px" }}>
-        <div className="container">
+      {/* CONTENT */}
+
+      <section
+        style={{
+          flex: 1,
+          padding: "40px 40px",
+        }}
+      >
+
+        <div style={{ filter: showLogin ? "blur(4px)" : "none" }}>
+
+          {/* HERO */}
 
           <div
             style={{
-              border: "1px solid #000",
-              minHeight: "420px",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "center",
-              alignItems: "center",
+              width: "100%",
+              maxWidth: "1440px",
+              margin: "0 auto",
+              border: "2px solid #000",
+              background: "#fff",
+              padding: "80px 60px",
               textAlign: "center",
-              padding: "60px 80px",
-              background: "rgba(255,255,255,0.25)",
             }}
           >
-            <span className="badge">
-              Smart university platform
+
+            <span
+              style={{
+                display: "inline-block",
+                padding: "8px 18px",
+                background: "#3B2E5A",
+                color: "#fff",
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                marginBottom: "22px",
+              }}
+            >
+              SMART UNIVERSITY PLATFORM
             </span>
 
             <h2
-              className="hero-title"
-              style={{ marginTop: "16px" }}
+              style={{
+                fontSize: "2.4rem",
+                fontWeight: 800,
+                marginBottom: "20px",
+              }}
             >
               Welcome to the University Administration Dashboard
             </h2>
 
             <p
-              className="hero-text"
               style={{
-                maxWidth: "760px",
-                marginTop: "18px",
+                maxWidth: "700px",
+                margin: "0 auto",
+                marginBottom: "36px",
               }}
             >
-              Manage student applications, university processes, and admissions
-              workflows in one centralised platform.
+              Manage student applications, university processes,
+              and admission workflows in one centralised platform
             </p>
 
-            <div
-              className="hero-actions"
+            <button
+              onClick={() => router.push("/register")}
+              className="btn btn-outline"
               style={{
-                marginTop: "36px",
+                border: "2px solid #3B2E5A",
+                fontWeight: 700,
+                padding: "14px 28px",
               }}
             >
-              <button
-                onClick={() => router.push("/login")}
-                className="btn btn-primary"
-              >
-                Login
-              </button>
+              REGISTER NOW
+            </button>
 
-              <button
-                onClick={() => router.push("/register")}
-                className="btn btn-secondary"
-              >
-                Register
-              </button>
-            </div>
           </div>
+
+          {/* FEATURES */}
 
           <div
             style={{
+              maxWidth: "1440px",
+              margin: "30px auto 0",
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "24px",
-              marginTop: "28px",
+              gap: "30px",
             }}
           >
-            <div className="feature-card">
-              <h4>Application Tracking</h4>
-              <p>Track applications easily.</p>
-            </div>
 
-            <div className="feature-card">
-              <h4>Secure Access</h4>
-              <p>Safe student and staff login.</p>
-            </div>
+            <HomeFeature
+              title="Application Tracking"
+              text="Track applications easily"
+            />
 
-            <div className="feature-card">
-              <h4>Centralised Management</h4>
-              <p>Everything in one place.</p>
-            </div>
+            <HomeFeature
+              title="Secure Access"
+              text="Safe student access and staff login"
+            />
+
+            <HomeFeature
+              title="Centralised Management"
+              text="Everything in one place"
+            />
+
           </div>
 
         </div>
+
       </section>
+
+      {/* FOOTER */}
 
       <footer
         style={{
-          marginTop: "16px",
           borderTop: "1px solid rgba(0,0,0,0.18)",
           background: "rgba(255,255,255,0.35)",
-          backdropFilter: "blur(6px)",
         }}
       >
+
         <div
           className="container"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1.2fr 1fr",
             gap: "32px",
-            paddingTop: "28px",
-            paddingBottom: "20px",
-            alignItems: "start",
+            padding: "28px 0",
           }}
         >
+
           <div>
-            <h4
-              style={{
-                margin: "0 0 14px 0",
-                fontSize: "0.95rem",
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-              }}
-            >
-              NAVIGATION
-            </h4>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                fontSize: "0.92rem",
-                color: "var(--text-soft)",
-              }}
-            >
-              <span
-                onClick={() => router.push("/partners")}
-                style={{ cursor: "pointer" }}
-              >
-                Partners
-              </span>
-              <span
-                onClick={() => router.push("/about")}
-                style={{ cursor: "pointer" }}
-              >
-                About Us
-              </span>
-            </div>
-          </div>
-
-          <div style={{ textAlign: "center" }}>
-            <h4
-              style={{
-                margin: "0 0 10px 0",
-                fontSize: "1rem",
-                fontWeight: 700,
-                letterSpacing: "0.03em",
-              }}
-            >
-              UAAMS
-            </h4>
+            <h4>NAVIGATION</h4>
 
             <p
-              style={{
-                margin: "0 0 12px 0",
-                fontSize: "0.92rem",
-                color: "var(--text-soft)",
-                lineHeight: "1.7",
-              }}
+              onClick={() => router.push("/partners")}
+              style={{ cursor: "pointer" }}
             >
-              University Administration & Application Management System
+              Partners
             </p>
 
             <p
-              style={{
-                margin: "0",
-                fontSize: "0.9rem",
-                color: "var(--text-light)",
-                lineHeight: "1.8",
-              }}
+              onClick={() => router.push("/about")}
+              style={{ cursor: "pointer" }}
             >
-              Full Address
-              <br />
-              Email Address
-              <br />
-              Full Phone Number
+              About Us
+            </p>
+
+          </div>
+
+          <div style={{ textAlign: "center" }}>
+            <h4>UAAMS</h4>
+
+            <p>
+              University Administration & Application Management System
             </p>
           </div>
 
           <div style={{ textAlign: "right" }}>
-            <h4
-              style={{
-                margin: "0 0 14px 0",
-                fontSize: "0.95rem",
-                fontWeight: 700,
-                letterSpacing: "0.04em",
-              }}
-            >
-              SUPPORT
-            </h4>
+            <h4>SUPPORT</h4>
 
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                fontSize: "0.92rem",
-                color: "var(--text-soft)",
-                alignItems: "flex-end",
-              }}
-            >
-              <span style={{ cursor: "pointer" }}>Privacy Policy</span>
-              <span style={{ cursor: "pointer" }}>Terms & Conditions</span>
-            </div>
+            <p>Privacy Policy</p>
+            <p>Terms & Conditions</p>
           </div>
+
         </div>
 
         <div
           style={{
             borderTop: "1px solid rgba(0,0,0,0.12)",
+            textAlign: "center",
+            padding: "12px 0",
+            fontSize: "0.85rem",
           }}
         >
+          2026 UAAMS. All rights reserved.
+        </div>
+
+      </footer>
+
+      {/* LOGIN MODAL — FIXED */}
+
+      {showLogin && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            background: "rgba(0,0,0,0.2)",
+            zIndex: 100,
+          }}
+        >
+
           <div
-            className="container"
             style={{
-              paddingTop: "14px",
-              paddingBottom: "14px",
-              textAlign: "center",
-              fontSize: "0.85rem",
-              color: "var(--text-light)",
+              background: "#fff",
+              padding: "30px",
+              border: "2px solid #000",
+              width: "320px",
             }}
           >
-            2026 UAAMS. All rights reserved.
+
+            <button
+              type="button"
+              onClick={() => setShowLogin(false)}
+              style={{
+                marginBottom: "10px",
+                fontWeight: 700,
+              }}
+            >
+              BACK
+            </button>
+
+            <h3 style={{ marginBottom: "20px" }}>
+              LOGIN
+            </h3>
+
+            <form onSubmit={handleLogin}>
+
+              <input
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(e) =>
+                  setEmail(e.target.value)
+                }
+                style={inputStyle}
+                required
+              />
+
+              <input
+                placeholder="Password"
+                type="password"
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                style={inputStyle}
+                required
+              />
+
+              {errorMessage && (
+                <p
+                  style={{
+                    color: "red",
+                    fontSize: "0.85rem",
+                    marginBottom: "10px",
+                  }}
+                >
+                  {errorMessage}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                {loading
+                  ? "LOGGING IN..."
+                  : "LOGIN"}
+              </button>
+
+            </form>
+
           </div>
+
         </div>
-      </footer>
+      )}
 
     </main>
   );
 }
+
+/* FEATURE */
+
+function HomeFeature({ title, text }) {
+  return (
+    <div
+      style={{
+        border: "2px solid #000",
+        background: "#fff",
+        padding: "50px 30px",
+        textAlign: "center",
+        minHeight: "260px",
+      }}
+    >
+      <h3
+        style={{
+          fontWeight: 700,
+          marginBottom: "18px",
+          fontSize: "1.3rem",
+        }}
+      >
+        {title}
+      </h3>
+
+      <p>{text}</p>
+    </div>
+  );
+}
+
+const inputStyle = {
+  width: "100%",
+  height: "42px",
+  border: "2px solid #3B2E5A",
+  padding: "0 12px",
+  marginBottom: "14px",
+};

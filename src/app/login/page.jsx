@@ -18,6 +18,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    alert("Login button clicked");
 
     setErrorMessage("");
     setLoading(true);
