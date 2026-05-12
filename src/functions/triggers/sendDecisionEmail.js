@@ -1,9 +1,21 @@
-import { buildDecisionEmail } from "@/lib/services/email-service";
+import { decisionTemplate } from "@/components/emails/decisionTemplate";
 import { sendEmailMock } from "@/functions/utils/smtpClient";
 import { logEmailEvent } from "@/functions/triggers/logEmailEvent";
 
-export function sendDecisionEmail(name, email, status) {
-  const html = buildDecisionEmail(name, status);
+export function sendDecisionEmail({
+  name,
+  email,
+  status,
+  messageToStudent,
+}) {
+  if (!email) {
+    return {
+      success: false,
+      message: "No student email found. Decision email was not sent.",
+    };
+  }
+
+  const html = decisionTemplate(name, status, messageToStudent);
 
   const smtpResult = sendEmailMock({
     to: email,

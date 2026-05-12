@@ -9,15 +9,11 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { getFirestoreDb } from "@/lib/firebase";
 
-const STATUSES = [
-  "Submitted",
-  "Under Review",
-  "More Info Required",
-  "Approved",
-  "Rejected",
-];
+import { getFirestoreDb } from "@/lib/firebase";
+import { sendDecisionEmail } from "@/functions/triggers/sendDecisionEmail";
+
+const DECISION_STATUSES = ["Under Review", "Offered", "Rejected"];
 
 export async function getApplicationById(id) {
   const db = getFirestoreDb();
@@ -46,7 +42,12 @@ export async function getApplications() {
   }));
 }
 
-export async function updateApplicationStatus(id, newStatus, adminInfo) {
+export async function updateApplicationStatus(
+  id,
+  newStatus,
+  adminInfo,
+  messageToStudent = ""
+) {
   const db = getFirestoreDb();
   const applicationRef = doc(db, "applications", id);
   const snapshot = await getDoc(applicationRef);
@@ -55,46 +56,95 @@ export async function updateApplicationStatus(id, newStatus, adminInfo) {
     throw new Error("Application not found");
   }
 
-  if (!STATUSES.includes(newStatus)) {
+  if (!DECISION_STATUSES.includes(newStatus)) {
     throw new Error(`Invalid status: ${newStatus}`);
   }
 
   const currentData = snapshot.data();
-  const oldStatus = currentData?.applicationStatus || "Unknown";
 
-  const validTransitions = {
-    Submitted: STATUSES,
-    "Under Review": STATUSES,
-    "More Info Required": STATUSES,
-    Approved: STATUSES,
-    Rejected: STATUSES,
-  };
+  const oldStatus =
+    currentData?.applicationStatus ||
+    currentData?.status ||
+    currentData?.pendingDecision ||
+    "Submitted";
 
-  const allowedNext = validTransitions[oldStatus] || [];
+  const finalMessage = String(messageToStudent || "").trim();
 
-  if (!allowedNext.includes(newStatus)) {
-    throw new Error(`Invalid status transition: ${oldStatus} → ${newStatus}`);
-  }
+  const studentId =
+    currentData?.studentId ||
+    currentData?.studentUid ||
+    currentData?.userId ||
+    currentData?.createdBy ||
+    null;
+
+  const studentEmail =
+    currentData?.email ||
+    currentData?.emailAddress ||
+    currentData?.studentEmail ||
+    currentData?.applicantEmail ||
+    null;
+
+  const studentName =
+    currentData?.studentName ||
+    currentData?.fullName ||
+    currentData?.displayName ||
+    currentData?.applicantName ||
+    "Student";
 
   await updateDoc(applicationRef, {
     applicationStatus: newStatus,
+    status: newStatus,
+    pendingDecision: newStatus,
+
+    messageToStudent: finalMessage,
+    decisionMessage: finalMessage,
+
     updatedAt: serverTimestamp(),
-    reviewedBy: adminInfo.name,
     reviewedAt: serverTimestamp(),
-    ...(newStatus === "Approved" || newStatus === "Rejected"
+    reviewedBy: adminInfo?.name || "Admin",
+    reviewedById: adminInfo?.uid || null,
+
+    ...(newStatus === "Offered" || newStatus === "Rejected"
       ? { decisionAt: serverTimestamp() }
       : {}),
   });
 
   await addDoc(collection(db, "applications", id, "decisionHistory"), {
-    note: `Status changed from ${oldStatus} to ${newStatus}`,
+    note: finalMessage || `Status changed from ${oldStatus} to ${newStatus}`,
     previousStatus: oldStatus,
     status: newStatus,
     changedAt: serverTimestamp(),
-    changedBy: adminInfo.name,
-    changedById: adminInfo.uid,
+    changedBy: adminInfo?.name || "Admin",
+    changedById: adminInfo?.uid || null,
     eventType: "status_change",
   });
+
+  if (studentId && finalMessage) {
+    await addDoc(collection(db, "notifications"), {
+      studentId,
+      applicationId: currentData?.applicationId || id,
+      applicationDocumentId: id,
+      status: newStatus,
+      title: `Application ${newStatus}`,
+      message: finalMessage,
+      read: false,
+      createdAt: serverTimestamp(),
+      eventType: "application_status_update",
+    });
+  }
+
+  if (studentEmail && finalMessage) {
+    try {
+      sendDecisionEmail({
+        name: studentName,
+        email: studentEmail,
+        status: newStatus,
+        messageToStudent: finalMessage,
+      });
+    } catch (error) {
+      console.error("Decision email failed:", error);
+    }
+  }
 }
 
 export async function addApplicationNote(applicationId, noteText, adminInfo) {
@@ -102,8 +152,8 @@ export async function addApplicationNote(applicationId, noteText, adminInfo) {
   const notesRef = collection(db, "applications", applicationId, "notes");
 
   await addDoc(notesRef, {
-    adminId: adminInfo.uid,
-    adminName: adminInfo.name,
+    adminId: adminInfo?.uid || null,
+    adminName: adminInfo?.name || "Admin",
     noteText,
     createdAt: serverTimestamp(),
     updatedAt: null,
@@ -113,12 +163,14 @@ export async function addApplicationNote(applicationId, noteText, adminInfo) {
 
 export async function getDecisionHistory(applicationId) {
   const db = getFirestoreDb();
+
   const historyRef = collection(
     db,
     "applications",
     applicationId,
     "decisionHistory"
   );
+
   const q = query(historyRef, orderBy("changedAt", "desc"));
   const snapshot = await getDocs(q);
 

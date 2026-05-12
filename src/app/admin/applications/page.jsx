@@ -9,7 +9,7 @@ import {
   getApplications,
   updateApplicationStatus,
 } from "@/lib/services/applicationService";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
   const router = useRouter();

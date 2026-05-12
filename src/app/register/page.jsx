@@ -1,261 +1,469 @@
-"use client";
+/*"use client";
 
-import ProtectedRoute from "@/components/ProtectedRoute";
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useState } from "react";
 
-export default function StudentApplicationsPage() {
+export default function RegisterPage() {
   const router = useRouter();
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const auth = getFirebaseAuth();
-    const db = getFirestoreDb();
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      try {
-        const applicationsQuery = query(
-          collection(db, "applications"),
-          where("studentId", "==", user.uid)
-        );
-
-        const snapshot = await getDocs(applicationsQuery);
-
-        const data = snapshot.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-          }))
-          .sort((a, b) => {
-            const aTime = a.createdAt?.toMillis?.() || 0;
-            const bTime = b.createdAt?.toMillis?.() || 0;
-            return bTime - aTime;
-          });
-
-        setApplications(data);
-      } catch (error) {
-        console.error("Error loading applications:", error);
-        alert("Could not load your applications.");
-      } finally {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [levelOfStudy, setLevelOfStudy] = useState("");
 
   return (
-    <ProtectedRoute>
-      <main style={pageStyle}>
-        <div style={containerStyle}>
-          <button
-            onClick={() => router.push("/student")}
-            style={linkButtonStyle}
-          >
-            Back to Dashboard
-          </button>
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        background: "rgba(247, 241, 232, 1)",
+      }}
+    >
+      {/* HEADER *
 
-          <div style={headerStyle}>
-            <div>
-              <h1 style={titleStyle}>My Applications</h1>
-              <p style={subtitleStyle}>
-                View and track your submitted course applications.
-              </p>
-            </div>
+      <header className="topbar">
+        <div className="container topbar-content">
+          <div className="brand-block">
+            <h1 className="logo">UAAMS</h1>
+          </div>
+
+          <div className="nav-center">
+            <button
+              onClick={() => router.push("/partners")}
+              className="btn btn-outline nav-btn"
+            >
+              PARTNERS
+            </button>
 
             <button
-              onClick={() => router.push("/student/application/new")}
-              style={primaryButtonStyle}
+              onClick={() => router.push("/about")}
+              className="btn btn-outline nav-btn"
             >
-              New Application
+              ABOUT US
             </button>
           </div>
 
-          <section style={cardStyle}>
-            {loading ? (
-              <p style={messageStyle}>Loading applications...</p>
-            ) : applications.length === 0 ? (
-              <div style={emptyStyle}>
-                <h2 style={emptyTitleStyle}>No applications yet</h2>
-                <p style={subtitleStyle}>
-                  Create your first application and it will appear here.
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: "16px" }}>
-                {applications.map((app) => {
-                  const status =
-                    app.applicationStatus || app.status || "Submitted";
+          <div className="topbar-actions">
+            <button
+              onClick={() => router.push("/login")}
+              className="btn btn-outline"
+            >
+              LOGIN
+            </button>
 
-                  return (
-                    <div key={app.id} style={applicationCard}>
-                      <div>
-                        <h3 style={applicationTitle}>
-                          {app.courseName || "Untitled application"}
-                        </h3>
-                        <p style={applicationText}>
-                          Application ID: {app.id}
-                        </p>
-                      </div>
-
-                      <div style={actionsStyle}>
-                        <span style={getStatusStyle(status)}>{status}</span>
-                        <button
-                          onClick={() =>
-                            router.push(`/student/application/${app.id}`)
-                          }
-                          style={secondaryButtonStyle}
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+            <button
+              onClick={() => router.push("/register")}
+              className="btn btn-primary"
+            >
+              REGISTER
+            </button>
+          </div>
         </div>
-      </main>
-    </ProtectedRoute>
+      </header>
+
+      {/* FORM SECTION 
+
+      <section
+        style={{
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "60px 20px",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "820px", // MUCH BIGGER
+            border: "2px solid #3B2E5A",
+            background: "rgba(255,255,255,0.92)",
+            padding: "56px 60px 48px 60px",
+            boxShadow: "0 14px 36px rgba(0,0,0,0.08)",
+          }}
+        >
+          <h1
+            style={{
+              textAlign: "center",
+              marginBottom: "36px",
+              fontSize: "32px",
+              fontWeight: 700,
+              color: "#3B2E5A",
+            }}
+          >
+            CREATE YOUR ACCOUNT
+          </h1>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              alert("Static register preview.");
+            }}
+          >
+            {/* INPUTS *
+
+            <div style={{ marginBottom: "18px" }}>
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom: "18px" }}>
+              <input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom: "18px" }}>
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom: "18px" }}>
+              <input
+                type="text"
+                placeholder="Nationality"
+                value={nationality}
+                onChange={(e) => setNationality(e.target.value)}
+                required
+                style={inputStyle}
+              />
+            </div>
+
+            <div style={{ marginBottom: "32px" }}>
+              <select
+                value={levelOfStudy}
+                onChange={(e) => setLevelOfStudy(e.target.value)}
+                required
+                style={inputStyle}
+              >
+                <option value="">Level Of Study</option>
+                <option>Foundation</option>
+                <option>Undergraduate</option>
+                <option>Postgraduate</option>
+                <option>PhD</option>
+              </select>
+            </div>
+
+            {/* BUTTON *
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <button
+                type="submit"
+                style={{
+                  minWidth: "220px",
+                  height: "50px",
+                  border: "2px solid #3B2E5A",
+                  background: "#3B2E5A",
+                  color: "#fff",
+                  fontSize: "16px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Register
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {/* FOOTER — NOW ALWAYS AT BOTTOM *
+
+      <footer
+        style={{
+          borderTop: "1px solid rgba(0,0,0,0.18)",
+          background: "rgba(255,255,255,0.35)",
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1.2fr 1fr",
+            gap: "32px",
+            padding: "28px 0",
+          }}
+        >
+          <div>
+            <h4>NAVIGATION</h4>
+            <p>Partners</p>
+            <p>About Us</p>
+          </div>
+
+          <div style={{ textAlign: "center" }}>
+            <h4>UAAMS</h4>
+            <p>
+              University Administration & Application Management System
+            </p>
+            <p>
+              Full Address
+              <br />
+              Email Address
+              <br />
+              Full Phone Number
+            </p>
+          </div>
+
+          <div style={{ textAlign: "right" }}>
+            <h4>SUPPORT</h4>
+            <p>Privacy Policy</p>
+            <p>Terms & Conditions</p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            borderTop: "1px solid rgba(0,0,0,0.12)",
+            textAlign: "center",
+            padding: "12px 0",
+            fontSize: "0.85rem",
+          }}
+        >
+          2026 UAAMS. All rights reserved.
+        </div>
+      </footer>
+    </main>
   );
 }
 
-const pageStyle = {
-  minHeight: "100vh",
-  background: "rgba(247, 241, 232, 1)",
-  padding: "40px 20px",
-};
+/* SHARED INPUT STYLE 
 
-const containerStyle = {
-  maxWidth: "1000px",
-  margin: "0 auto",
-};
-
-const headerStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "20px",
-  marginBottom: "24px",
-};
-
-const titleStyle = {
-  fontSize: "32px",
-  fontWeight: "700",
-  color: "#3B2E5A",
-  margin: 0,
-};
-
-const subtitleStyle = {
-  fontSize: "15px",
-  color: "#555",
-  marginTop: "8px",
-};
-
-const cardStyle = {
-  background: "#ffffff",
+const inputStyle = {
+  width: "100%",
+  height: "52px", // BIGGER INPUTS
   border: "2px solid #3B2E5A",
-  padding: "24px",
-  boxShadow: "0 8px 20px rgba(0,0,0,0.05)",
-};
-
-const primaryButtonStyle = {
-  height: "42px",
-  padding: "0 18px",
-  border: "2px solid #3B2E5A",
-  background: "#3B2E5A",
-  color: "#fff",
-  fontWeight: "600",
-  cursor: "pointer",
-};
-
-const secondaryButtonStyle = {
-  height: "38px",
-  padding: "0 14px",
-  border: "2px solid #3B2E5A",
-  background: "#fff",
-  color: "#3B2E5A",
-  fontWeight: "600",
-  cursor: "pointer",
-};
-
-const linkButtonStyle = {
-  background: "transparent",
-  border: "none",
-  color: "#3B2E5A",
-  fontWeight: "600",
-  cursor: "pointer",
-  marginBottom: "20px",
-};
-
-const applicationCard = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "20px",
-  padding: "18px",
-  border: "1px solid rgba(59, 46, 90, 0.25)",
-  background: "#fff",
-};
-
-const applicationTitle = {
-  margin: 0,
-  fontSize: "18px",
-  color: "#3B2E5A",
-};
-
-const applicationText = {
-  margin: "6px 0 0 0",
-  fontSize: "13px",
-  color: "#666",
-};
-
-const actionsStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-};
-
-const messageStyle = {
-  color: "#3B2E5A",
+  padding: "0 16px",
   fontSize: "16px",
-};
+  outline: "none",
+  background: "#fff",
+};*/
 
-const emptyStyle = {
-  border: "1px dashed rgba(59, 46, 90, 0.4)",
-  padding: "30px",
-  textAlign: "center",
-};
+"use client";
 
-const emptyTitleStyle = {
-  color: "#3B2E5A",
-  fontSize: "22px",
-  marginBottom: "8px",
-};
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
-const getStatusStyle = (status) => {
-  let bg = "#EF8F00";
+import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
 
-  if (status === "Accepted" || status === "Approved") bg = "#2E7D32";
-  if (status === "Rejected") bg = "#C62828";
-  if (status === "Under Review") bg = "#1565C0";
+export default function RegisterPage() {
+  const router = useRouter();
 
-  return {
-    padding: "7px 14px",
-    color: "#fff",
-    fontWeight: "600",
-    background: bg,
-    fontSize: "13px",
-    whiteSpace: "nowrap",
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nationality, setNationality] = useState("");
+  const [levelOfStudy, setLevelOfStudy] = useState("Undergraduate");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+
+    setErrorMessage("");
+    setLoading(true);
+
+    try {
+      const auth = getFirebaseAuth();
+      const db = getFirestoreDb();
+
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
+
+      const firebaseUser = userCredential.user;
+
+      await updateProfile(firebaseUser, {
+        displayName: displayName.trim(),
+      });
+
+      await setDoc(doc(db, "users", firebaseUser.uid), {
+        uid: firebaseUser.uid,
+        displayName: displayName.trim(),
+        email: email.trim().toLowerCase(),
+        nationality: nationality.trim(),
+        levelOfStudy: levelOfStudy,
+        role: "student",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      router.replace("/student");
+    } catch (error) {
+      console.error("Register error:", error);
+
+      if (error.code === "auth/email-already-in-use") {
+        setErrorMessage("This email is already registered.");
+      } else if (error.code === "auth/invalid-email") {
+        setErrorMessage("Please enter a valid email address.");
+      } else if (error.code === "auth/weak-password") {
+        setErrorMessage("Password should be at least 6 characters.");
+      } else if (error.code === "permission-denied") {
+        setErrorMessage("Firestore permission denied.");
+      } else {
+        setErrorMessage("Registration failed. Please try again.");
+      }
+
+      setLoading(false);
+    }
   };
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#F7F1E8",
+        padding: "70px 40px",
+      }}
+    >
+      <section
+        style={{
+          maxWidth: "620px",
+          margin: "0 auto",
+          background: "#fff",
+          border: "2px solid #000",
+          padding: "50px",
+        }}
+      >
+        <h1
+          style={{
+            textAlign: "center",
+            marginBottom: "32px",
+            color: "#16162b",
+          }}
+        >
+          CREATE YOUR ACCOUNT
+        </h1>
+
+        <form onSubmit={handleRegister}>
+          <input
+            type="text"
+            placeholder="Full name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            style={inputStyle}
+            required
+            disabled={loading}
+          />
+
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={inputStyle}
+            required
+            disabled={loading}
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={inputStyle}
+            required
+            disabled={loading}
+          />
+
+          <input
+            type="text"
+            placeholder="Nationality"
+            value={nationality}
+            onChange={(e) => setNationality(e.target.value)}
+            style={inputStyle}
+            required
+            disabled={loading}
+          />
+
+          <select
+            value={levelOfStudy}
+            onChange={(e) => setLevelOfStudy(e.target.value)}
+            style={inputStyle}
+            required
+            disabled={loading}
+          >
+            <option value="Undergraduate">Undergraduate</option>
+            <option value="Postgraduate">Postgraduate</option>
+            <option value="Foundation">Foundation</option>
+            <option value="PhD">PhD</option>
+          </select>
+
+          {errorMessage && (
+            <p
+              style={{
+                color: "red",
+                fontSize: "0.9rem",
+                marginBottom: "16px",
+              }}
+            >
+              {errorMessage}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: "220px",
+              height: "50px",
+              display: "block",
+              margin: "26px auto 0",
+              background: "#21132f",
+              color: "#fff",
+              border: "none",
+              fontWeight: "700",
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "REGISTERING..." : "Register"}
+          </button>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+const inputStyle = {
+  width: "100%",
+  height: "48px",
+  border: "1.5px solid #2f2146",
+  padding: "0 16px",
+  marginBottom: "16px",
+  background: "#fff",
 };

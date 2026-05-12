@@ -13,7 +13,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/context/auth-context";
 
 function formatDateTime(value) {
   if (!value) return "Just now";
