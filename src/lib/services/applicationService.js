@@ -1,12 +1,13 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
 } from "firebase/firestore";
 
@@ -31,17 +32,27 @@ export async function getApplicationById(id) {
   };
 }
 
-export async function getApplications() {
+export function subscribeToApplications(onApplicationsChange, onError) {
   const db = getFirestoreDb();
   const applicationsRef = collection(db, "applications");
   const q = query(applicationsRef, orderBy("submittedAt", "desc"));
-  const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnap) => ({
-    ...docSnap.data(),
-    id: docSnap.id,
-    documentId: docSnap.id,
-  }));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const applications = snapshot.docs.map((docSnap) => ({
+        ...docSnap.data(),
+        id: docSnap.id,
+        documentId: docSnap.id,
+      }));
+
+      onApplicationsChange(applications);
+    },
+    (error) => {
+      console.error("Error listening to applications:", error);
+      onError?.(error);
+    }
+  );
 }
 
 export async function updateApplicationStatus(
