@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getApplications } from "@/lib/services/applicationService";
+import { subscribeToApplications } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
@@ -38,26 +38,25 @@ export default function AdminPage() {
   }, [firebaseUser, isUniversityAdmin, isLoading, router]);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoadingData(true);
-        setErrorMessage("");
+  if (!firebaseUser || !isUniversityAdmin) return;
 
-        const data = await getApplications();
-        setApplications(data);
-        setFilteredApplications(data);
-      } catch (error) {
-        console.error("Error loading applications:", error);
-        setErrorMessage("Unable to load applications.");
-      } finally {
-        setLoadingData(false);
-      }
-    }
+  setLoadingData(true);
+  setErrorMessage("");
 
-    if (firebaseUser && isUniversityAdmin) {
-      fetchData();
+  const unsubscribe = subscribeToApplications(
+    (data) => {
+      setApplications(Array.isArray(data) ? data : []);
+      setLoadingData(false);
+    },
+    () => {
+      setErrorMessage("Unable to load applications.");
+      setApplications([]);
+      setLoadingData(false);
     }
-  }, [firebaseUser, isUniversityAdmin]);
+  );
+
+  return () => unsubscribe();
+}, [firebaseUser, isUniversityAdmin]);
 
   useEffect(() => {
     let filtered = [...applications];
