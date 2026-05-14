@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getApplications } from "@/lib/services/applicationService";
+import {
+  subscribeToApplications,
+} from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
@@ -38,25 +40,32 @@ export default function AdminPage() {
   }, [firebaseUser, isUniversityAdmin, isLoading, router]);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoadingData(true);
-        setErrorMessage("");
+    if (!firebaseUser || !isUniversityAdmin) return;
 
-        const data = await getApplications();
-        setApplications(data);
-        setFilteredApplications(data);
-      } catch (error) {
+    setLoadingData(true);
+    setErrorMessage("");
+
+    const unsubscribe = subscribeToApplications(
+      (data) => {
+        const safeData = Array.isArray(data) ? data : [];
+        setApplications(safeData);
+        setFilteredApplications(safeData);
+        setLoadingData(false);
+      },
+      (error) => {
         console.error("Error loading applications:", error);
+        setApplications([]);
+        setFilteredApplications([]);
         setErrorMessage("Unable to load applications.");
-      } finally {
         setLoadingData(false);
       }
-    }
+    );
 
-    if (firebaseUser && isUniversityAdmin) {
-      fetchData();
-    }
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
   }, [firebaseUser, isUniversityAdmin]);
 
   useEffect(() => {
@@ -66,45 +75,66 @@ export default function AdminPage() {
       const searchValue = search.toLowerCase();
 
       filtered = filtered.filter((app) => {
-        const studentName = String(app.studentName || "").toLowerCase();
-        const studentEmail = String(app.studentEmail || "").toLowerCase();
+        const studentName = String(
+          app.studentName || app.fullName || app.applicantName || ""
+        ).toLowerCase();
+
+        const studentEmail = String(
+          app.studentEmail || app.email || app.applicantEmail || ""
+        ).toLowerCase();
+
         const applicationId = String(
           app.applicationId || app.id || ""
+        ).toLowerCase();
+
+        const courseName = String(
+          app.courseName || app.course || ""
         ).toLowerCase();
 
         return (
           studentName.includes(searchValue) ||
           studentEmail.includes(searchValue) ||
-          applicationId.includes(searchValue)
+          applicationId.includes(searchValue) ||
+          courseName.includes(searchValue)
         );
       });
     }
 
     if (statusFilter) {
-      filtered = filtered.filter(
-        (app) => app.applicationStatus === statusFilter
-      );
+      filtered = filtered.filter((app) => {
+        const currentStatus =
+          app.applicationStatus ||
+          app.status ||
+          app.pendingDecision ||
+          "Submitted";
+
+        return currentStatus === statusFilter;
+      });
     }
 
     setFilteredApplications(filtered);
   }, [search, statusFilter, applications]);
 
   const stats = useMemo(() => {
+    const getCurrentStatus = (app) =>
+      app.applicationStatus ||
+      app.status ||
+      app.pendingDecision ||
+      "Submitted";
+
     return {
       total: applications.length,
       submitted: applications.filter(
-        (app) => app.applicationStatus === "Submitted"
+        (app) => getCurrentStatus(app) === "Submitted"
       ).length,
       underReview: applications.filter(
-        (app) => app.applicationStatus === "Under Review"
+        (app) => getCurrentStatus(app) === "Under Review"
       ).length,
       offered: applications.filter(
-        (app) =>
-          app.applicationStatus === "Offered" ||
-          app.applicationStatus === "Approved"
+        (app) => getCurrentStatus(app) === "Offered"
       ).length,
       rejected: applications.filter(
-        (app) => app.applicationStatus === "Rejected"
+        (app) => getCurrentStatus(app) === "Rejected"
       ).length,
     };
   }, [applications]);
@@ -143,10 +173,6 @@ export default function AdminPage() {
           </div>
 
           <nav style={navStyle}>
-            
-
-           
-
             <button
               type="button"
               style={navButtonStyle}
@@ -178,7 +204,7 @@ export default function AdminPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="SEARCH BY STUDENT ID OR APPLICATION ID"
+                placeholder="SEARCH BY STUDENT NAME OR APPLICATION ID"
                 style={searchInputStyle}
               />
             </div>
@@ -192,9 +218,7 @@ export default function AdminPage() {
               <option value="Submitted">SUBMITTED</option>
               <option value="Under Review">UNDER REVIEW</option>
               <option value="Offered">OFFERED</option>
-              <option value="Approved">APPROVED</option>
               <option value="Rejected">REJECTED</option>
-              <option value="Draft">DRAFT</option>
             </select>
           </div>
 
@@ -237,6 +261,12 @@ export default function AdminPage() {
                   const applicationId =
                     app.id || app.applicationId;
 
+                  const currentStatus =
+                    app.applicationStatus ||
+                    app.status ||
+                    app.pendingDecision ||
+                    "Submitted";
+
                   return (
                     <tr key={applicationId || index}>
                       <td style={tableCellStyle}>
@@ -244,11 +274,14 @@ export default function AdminPage() {
                       </td>
 
                       <td style={tableCellStyle}>
-                        {app.studentName || "Student Name"}
+                        {app.studentName ||
+                          app.fullName ||
+                          app.applicantName ||
+                          "Student Name"}
                       </td>
 
                       <td style={tableCellStyle}>
-                        {app.courseName || "Course Name"}
+                        {app.courseName || app.course || "Course Name"}
                       </td>
 
                       <td style={tableCellStyle}>
@@ -258,7 +291,7 @@ export default function AdminPage() {
                       </td>
 
                       <td style={tableCellStyle}>
-                        {app.applicationStatus || "Outcome"}
+                        {currentStatus}
                       </td>
 
                       <td style={tableCellStyle}>

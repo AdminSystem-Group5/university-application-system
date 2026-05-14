@@ -11,7 +11,7 @@ import {
 } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
-export default function AdminPage() {
+export default function AdminApplicationsPage() {
   const router = useRouter();
 
   const {
@@ -32,7 +32,6 @@ export default function AdminPage() {
   const [messageType, setMessageType] = useState("success");
   const [pageLoading, setPageLoading] = useState(true);
 
-
   useEffect(() => {
     if (!message) return;
 
@@ -43,36 +42,41 @@ export default function AdminPage() {
     return () => clearTimeout(timer);
   }, [message]);
 
-useEffect(() => {
-  if (isLoading) return;
+  useEffect(() => {
+    if (isLoading) return;
 
-  if (!firebaseUser) {
-    router.replace("/login");
-    return;
-  }
-
-  if (!isUniversityAdmin) {
-    alert("Access denied. Admins only.");
-    router.replace("/login");
-    return;
-  }
-
-  setPageLoading(true);
-
-  const unsubscribe = subscribeToApplications(
-    (data) => {
-      setApplications(Array.isArray(data) ? data : []);
-      setPageLoading(false);
-    },
-    () => {
-      setMessage("Failed to load applications.");
-      setMessageType("error");
-      setPageLoading(false);
+    if (!firebaseUser) {
+      router.replace("/login");
+      return;
     }
-  );
 
-  return () => unsubscribe();
-}, [isLoading, firebaseUser, isUniversityAdmin, router]);
+    if (!isUniversityAdmin) {
+      alert("Access denied. Admins only.");
+      router.replace("/login");
+      return;
+    }
+
+    setPageLoading(true);
+
+    const unsubscribe = subscribeToApplications(
+      (data) => {
+        setApplications(Array.isArray(data) ? data : []);
+        setPageLoading(false);
+      },
+      (error) => {
+        console.error("Error loading applications:", error);
+        setMessage("Failed to load applications.");
+        setMessageType("error");
+        setPageLoading(false);
+      }
+    );
+
+    return () => {
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [isLoading, firebaseUser, isUniversityAdmin, router]);
 
   const filteredApplications = useMemo(() => {
     let filtered = [...applications];
@@ -80,29 +84,55 @@ useEffect(() => {
     if (search.trim()) {
       const searchLower = search.toLowerCase();
 
-      filtered = filtered.filter(
-        (app) =>
-          app.studentName?.toLowerCase().includes(searchLower) ||
-          app.studentEmail?.toLowerCase().includes(searchLower) ||
-          app.courseName?.toLowerCase().includes(searchLower) ||
-          app.applicationId?.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter((app) => {
+        const studentName = String(
+          app.studentName || app.fullName || app.applicantName || ""
+        ).toLowerCase();
+
+        const studentEmail = String(
+          app.studentEmail || app.email || app.applicantEmail || ""
+        ).toLowerCase();
+
+        const courseName = String(
+          app.courseName || app.course || ""
+        ).toLowerCase();
+
+        const applicationId = String(
+          app.applicationId || app.id || ""
+        ).toLowerCase();
+
+        return (
+          studentName.includes(searchLower) ||
+          studentEmail.includes(searchLower) ||
+          courseName.includes(searchLower) ||
+          applicationId.includes(searchLower)
+        );
+      });
     }
 
     if (statusFilter) {
-      filtered = filtered.filter(
-        (app) => app.applicationStatus === statusFilter
-      );
+      filtered = filtered.filter((app) => {
+        const currentStatus =
+          app.applicationStatus ||
+          app.status ||
+          app.pendingDecision ||
+          "Submitted";
+
+        return currentStatus === statusFilter;
+      });
     }
 
     if (courseFilter) {
-      filtered = filtered.filter((app) => app.courseName === courseFilter);
+      filtered = filtered.filter((app) => {
+        const courseName = app.courseName || app.course || "";
+        return courseName === courseFilter;
+      });
     }
 
     return filtered;
   }, [applications, search, statusFilter, courseFilter]);
 
-  const handleStatusChange = async (id, newStatus) => {
+  const handleStatusChange = async (id, newStatus, messageToStudent = "") => {
     try {
       if (!firebaseUser) {
         setMessage("You must be signed in.");
@@ -113,21 +143,24 @@ useEffect(() => {
       setUpdatingId(id);
       setMessage("");
 
-      await updateApplicationStatus(id, newStatus, {
-        uid: firebaseUser.uid,
-        name:
-          userData?.displayName ||
-          firebaseUser.displayName ||
-          firebaseUser.email ||
-          "Admin",
-      });
-
-      await fetchData();
+      await updateApplicationStatus(
+        id,
+        newStatus,
+        {
+          uid: firebaseUser.uid,
+          name:
+            userData?.displayName ||
+            firebaseUser.displayName ||
+            firebaseUser.email ||
+            "Admin",
+        },
+        messageToStudent
+      );
 
       setMessage("Status updated successfully.");
       setMessageType("success");
     } catch (error) {
-      console.error(error);
+      console.error("Status update error:", error);
       setMessage(error.message || "Error updating status.");
       setMessageType("error");
     } finally {
@@ -202,9 +235,9 @@ useEffect(() => {
               </h1>
 
               <p className="mt-8 w-full text-xl leading-relaxed text-gray-600 md:text-2xl xl:text-3xl">
-                Manage student applications, monitor admissions,
-                review statuses, approve decisions, and oversee the
-                entire university application system from one place.
+                Manage student applications, monitor admissions, review
+                statuses, approve decisions, and oversee the entire university
+                application system from one place.
               </p>
             </div>
 
