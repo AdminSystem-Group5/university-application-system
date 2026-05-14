@@ -205,7 +205,7 @@ export default function ReviewApplicationPage() {
           <div style={titleTextWrapperStyle}>
             <h2 style={pageTitleStyle}>NEW APPLICATION</h2>
             <p style={pageSubtitleStyle}>
-              COMPLETE THE FORM BELOW TO SUBMIT YOUR UNIVERSITY APPLICATION.
+              REVIEW YOUR APPLICATION BEFORE SUBMITTING.
             </p>
           </div>
         </section>
@@ -399,75 +399,79 @@ const pageStyle = {
   minHeight: "100vh",
   width: "100%",
   background: "#F7F1E8",
-  padding: "10px",
+  padding: "0",
   fontFamily: "Arial, Helvetica, sans-serif",
   boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 20px)",
+  minHeight: "100vh",
   width: "100%",
-  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "0 40px 60px",
+  padding: "0 36px 50px",
   boxSizing: "border-box",
 };
 
 const headerStyle = {
-  minHeight: "110px",
+  minHeight: "96px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 60px",
-  margin: "0 -40px 30px",
+  padding: "0 54px",
+  margin: "0 0 26px",
   borderBottom: "2px solid #000",
+  boxSizing: "border-box",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "48px",
+  fontSize: "42px",
   fontWeight: "900",
-  lineHeight: "48px",
+  lineHeight: "42px",
 };
 
 const subtitleStyle = {
-  margin: "6px 0 0",
-  fontSize: "16px",
-  lineHeight: "20px",
+  margin: "5px 0 0",
+  fontSize: "14px",
+  lineHeight: "18px",
 };
 
 const logoutButtonStyle = {
   background: "#fff",
   border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  padding: "14px 36px",
-  fontSize: "16px",
-  fontWeight: "700",
+  padding: "12px 32px",
+  fontSize: "14px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const titleBarStyle = {
   width: "100%",
-  maxWidth: "1700px",
-  minHeight: "90px",
-  margin: "0 auto 30px",
+  maxWidth: "1600px",
+  minHeight: "78px",
+  margin: "0 auto 26px",
   border: "2px solid #000",
   display: "grid",
-  gridTemplateColumns: "300px 1fr 300px",
+  gridTemplateColumns: "280px 1fr 280px",
   alignItems: "center",
   background: "#fff",
   boxSizing: "border-box",
 };
 
 const backDashboardButtonStyle = {
-  marginLeft: "30px",
-  width: "220px",
-  height: "48px",
+  marginLeft: "26px",
+  width: "205px",
+  height: "44px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: "800",
   cursor: "pointer",
 };
@@ -478,37 +482,37 @@ const titleTextWrapperStyle = {
 
 const pageTitleStyle = {
   margin: 0,
-  fontSize: "30px",
+  fontSize: "27px",
   fontWeight: "900",
 };
 
 const pageSubtitleStyle = {
-  margin: "8px 0 0",
-  fontSize: "13px",
+  margin: "6px 0 0",
+  fontSize: "12px",
   fontWeight: "800",
 };
 
 const stepWrapperStyle = {
   width: "100%",
-  maxWidth: "1700px",
-  margin: "0 auto 30px",
+  maxWidth: "1600px",
+  margin: "0 auto 26px",
   display: "grid",
   gridTemplateColumns: "1fr 1fr 1fr",
-  gap: "34px",
-  fontSize: "15px",
+  gap: "30px",
+  fontSize: "14px",
   fontWeight: "800",
 };
 
 const stepItemStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "20px",
+  gap: "18px",
 };
 
 const activeStepItemStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "20px",
+  gap: "18px",
   fontWeight: "900",
 };
 
@@ -519,58 +523,58 @@ const stepLineStyle = {
 
 const reviewBoxStyle = {
   width: "100%",
-  maxWidth: "1700px",
+  maxWidth: "1600px",
   margin: "0 auto",
   border: "2px solid #000",
   background: "#fff",
-  padding: "38px 60px 34px",
+  padding: "32px 46px 30px",
   boxSizing: "border-box",
 };
 
 const reviewSectionStyle = {
   borderBottom: "2px solid #000",
-  paddingBottom: "32px",
-  marginBottom: "32px",
+  paddingBottom: "28px",
+  marginBottom: "28px",
 };
 
 const reviewSectionTitleStyle = {
-  margin: "0 0 24px",
-  fontSize: "20px",
+  margin: "0 0 20px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const reviewGridStyle = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  gap: "24px 34px",
+  gap: "20px 28px",
 };
 
 const reviewCardStyle = {
   border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "20px 22px",
-  minHeight: "90px",
+  padding: "17px 20px",
+  minHeight: "82px",
   boxSizing: "border-box",
 };
 
 const reviewLabelStyle = {
-  margin: "0 0 10px",
-  fontSize: "14px",
+  margin: "0 0 8px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const reviewValueStyle = {
   margin: 0,
-  fontSize: "16px",
+  fontSize: "15px",
   fontWeight: "700",
 };
 
 const documentRowStyle = {
   border: "2px solid #000",
   background: "#F7F1E8",
-  minHeight: "80px",
-  padding: "18px 22px",
-  marginBottom: "16px",
+  minHeight: "72px",
+  padding: "16px 20px",
+  marginBottom: "14px",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
@@ -579,31 +583,31 @@ const documentRowStyle = {
 
 const documentLabelStyle = {
   margin: 0,
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const documentNameStyle = {
-  margin: "8px 0 0",
-  fontSize: "15px",
+  margin: "7px 0 0",
+  fontSize: "14px",
   fontWeight: "800",
 };
 
 const documentSizeStyle = {
   margin: "4px 0 0",
-  fontSize: "13px",
+  fontSize: "12px",
   fontWeight: "700",
 };
 
 const uploadedStatusStyle = {
   color: "green",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const notUploadedStatusStyle = {
   color: "red",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
@@ -611,9 +615,9 @@ const confirmRowStyle = {
   display: "flex",
   alignItems: "center",
   gap: "12px",
-  fontSize: "15px",
+  fontSize: "14px",
   fontWeight: "700",
-  margin: "8px 0 30px",
+  margin: "6px 0 26px",
 };
 
 const buttonRowStyle = {
@@ -624,37 +628,37 @@ const buttonRowStyle = {
 
 const rightButtonGroupStyle = {
   display: "flex",
-  gap: "28px",
+  gap: "24px",
 };
 
 const secondaryButtonStyle = {
-  width: "150px",
-  height: "50px",
+  width: "140px",
+  height: "46px",
   background: "#fff",
   border: "2px solid #000",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const draftButtonStyle = {
-  width: "170px",
-  height: "50px",
+  width: "158px",
+  height: "46px",
   background: "#fff",
   border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  fontSize: "13px",
+  fontSize: "12px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const primaryButtonStyle = {
-  width: "230px",
-  height: "50px",
+  width: "210px",
+  height: "46px",
   background: "#3B2E5A",
   border: "2px solid #3B2E5A",
   color: "#fff",
-  fontSize: "13px",
+  fontSize: "12px",
   fontWeight: "800",
   cursor: "pointer",
 };

@@ -550,7 +550,7 @@ const pageStyle = {
   minHeight: "100vh",
   width: "100%",
   background: "#F7F1E8",
-  padding: "10px",
+  padding: "0",
   fontFamily: "Arial, Helvetica, sans-serif",
   boxSizing: "border-box",
 };

@@ -231,7 +231,7 @@ export default function ApplicationDetailsPage() {
           APPLICATION DETAILS PAGE.
         </section>
 
-        <Footer />
+
       </div>
     </main>
   );
@@ -242,6 +242,7 @@ function Header({ onLogout }) {
     <header style={headerStyle}>
       <div>
         <h1 style={logoStyle}>UAAMS</h1>
+
         <p style={subtitleStyle}>
           University Administration & Application
           <br />
@@ -249,19 +250,13 @@ function Header({ onLogout }) {
         </p>
       </div>
 
-      <nav style={navStyle}>
-        <button type="button" style={navButtonStyle}>
-          PARTNERS
-        </button>
-
-        <button type="button" style={navButtonStyle}>
-          ABOUT US
-        </button>
-
-        <button type="button" style={navButtonStyle} onClick={onLogout}>
-          LOGOUT
-        </button>
-      </nav>
+      <button
+        type="button"
+        style={logoutButtonStyle}
+        onClick={onLogout}
+      >
+        LOGOUT
+      </button>
     </header>
   );
 }
@@ -316,39 +311,7 @@ function DocumentItem({ title, documentData }) {
   );
 }
 
-function Footer() {
-  return (
-    <footer style={footerStyle}>
-      <div>
-        <h4 style={footerTitleStyle}>NAVIGATION</h4>
-        <p style={footerTextStyle}>PARTNERS</p>
-        <p style={footerTextStyle}>ABOUT US</p>
-      </div>
 
-      <div style={footerCenterStyle}>
-        <h4 style={footerTitleStyle}>UAAMS</h4>
-        <p style={footerTextStyle}>
-          UNIVERSITY ADMINISTRATION & APPLICATION
-          <br />
-          MANAGEMENT SYSTEM
-        </p>
-        <p style={footerTextStyle}>
-          FULL ADDRESS
-          <br />
-          EMAIL ADDRESS
-          <br />
-          FULL PHONE NUMBER
-        </p>
-      </div>
-
-      <div>
-        <h4 style={footerTitleStyle}>SUPPORT</h4>
-        <p style={footerTextStyle}>PRIVACY POLICY</p>
-        <p style={footerTextStyle}>TERMS & CONDITIONS</p>
-      </div>
-    </footer>
-  );
-}
 
 function normaliseApplication(documentId, data) {
   const status =
@@ -545,96 +508,103 @@ function formatDate(value) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "0",
   fontFamily: "Arial, Helvetica, sans-serif",
+  boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
+  padding: "0 36px 50px",
+  boxSizing: "border-box",
 };
 
 const headerStyle = {
-  height: "72px",
+  minHeight: "96px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 120px",
-  borderBottom: "1px solid rgba(0,0,0,0.15)",
+  padding: "0 54px",
+  margin: "0 0 28px",
+  borderBottom: "2px solid #000",
+  boxSizing: "border-box",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "24px",
-  fontWeight: "800",
-  lineHeight: "24px",
+  fontSize: "42px",
+  fontWeight: "900",
+  lineHeight: "42px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "5px 0 0",
+  fontSize: "14px",
+  lineHeight: "18px",
 };
 
-const navStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "70px",
-};
-
-const navButtonStyle = {
+const logoutButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  width: "80px",
-  height: "30px",
-  fontSize: "10px",
-  fontWeight: "700",
+  padding: "12px 32px",
+  fontSize: "14px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const titleBarStyle = {
-  maxWidth: "800px",
-  height: "38px",
-  margin: "16px auto 22px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1600px",
+  minHeight: "78px",
+  margin: "0 auto 26px",
+  border: "2px solid #000",
   display: "grid",
-  gridTemplateColumns: "190px 1fr 190px",
+  gridTemplateColumns: "280px 1fr 280px",
   alignItems: "center",
-  background: "#F7F1E8",
+  background: "#fff",
+  boxSizing: "border-box",
 };
 
 const backDashboardButtonStyle = {
-  marginLeft: "48px",
-  width: "145px",
-  height: "24px",
+  marginLeft: "26px",
+  width: "205px",
+  height: "44px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "9px",
-  fontWeight: "700",
+  fontSize: "13px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const pageTitleStyle = {
   margin: 0,
-  fontSize: "16px",
+  fontSize: "26px",
   fontWeight: "900",
   textAlign: "center",
 };
 
 const summaryRowStyle = {
-  maxWidth: "800px",
-  margin: "0 auto 14px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1600px",
+  margin: "0 auto 22px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "8px 16px",
+  padding: "18px 24px",
   display: "grid",
-  gridTemplateColumns: "0.8fr 1.3fr 1.4fr 1fr 1fr 0.9fr",
-  columnGap: "12px",
+  gridTemplateColumns: "repeat(6, 1fr)",
+  gap: "18px",
+  boxSizing: "border-box",
 };
 
 const summaryItemStyle = {
@@ -642,29 +612,31 @@ const summaryItemStyle = {
 };
 
 const summaryLabelStyle = {
-  margin: "0 0 4px",
-  fontSize: "8px",
+  margin: "0 0 8px",
+  fontSize: "12px",
   fontWeight: "900",
 };
 
 const summaryValueStyle = {
   margin: 0,
-  fontSize: "8px",
+  fontSize: "14px",
   fontWeight: "700",
   textTransform: "uppercase",
 };
 
 const progressBoxStyle = {
-  maxWidth: "800px",
-  margin: "0 auto 14px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1600px",
+  margin: "0 auto 22px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "14px 26px 22px",
+  padding: "26px 34px 34px",
+  boxSizing: "border-box",
 };
 
 const progressTitleStyle = {
-  margin: "0 0 8px",
-  fontSize: "9px",
+  margin: "0 0 16px",
+  fontSize: "14px",
   fontWeight: "900",
 };
 
@@ -681,12 +653,12 @@ const progressStepStyle = {
 };
 
 const checkboxStyle = (completed) => ({
-  width: "14px",
-  height: "14px",
+  width: "24px",
+  height: "24px",
   background: completed ? "#3B2E5A" : "#fff",
   color: "#fff",
-  border: "1px solid #3B2E5A",
-  fontSize: "10px",
+  border: "2px solid #3B2E5A",
+  fontSize: "14px",
   fontWeight: "900",
   display: "flex",
   alignItems: "center",
@@ -694,70 +666,73 @@ const checkboxStyle = (completed) => ({
 });
 
 const progressLineStyle = {
-  width: "145px",
-  borderTop: "1.5px solid #000",
+  width: "260px",
+  borderTop: "2px solid #000",
 };
 
 const progressLabelStyle = {
   position: "absolute",
-  top: "18px",
-  left: "-28px",
-  width: "80px",
-  fontSize: "7px",
+  top: "32px",
+  left: "-30px",
+  width: "120px",
+  fontSize: "11px",
   fontWeight: "800",
   textAlign: "center",
 };
 
 const detailsBoxStyle = {
-  maxWidth: "800px",
-  margin: "0 auto 14px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1600px",
+  margin: "0 auto 22px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "14px 26px",
+  padding: "26px 34px",
+  boxSizing: "border-box",
 };
 
 const detailsTitleStyle = {
-  margin: "0 0 8px",
-  fontSize: "10px",
+  margin: "0 0 14px",
+  fontSize: "16px",
   fontWeight: "900",
 };
 
 const detailsContentStyle = {
-  borderTop: "1px solid #000",
-  paddingTop: "8px",
+  borderTop: "2px solid #000",
+  paddingTop: "18px",
 };
 
 const detailsLineStyle = {
   display: "grid",
-  gridTemplateColumns: "280px 1fr",
-  marginBottom: "7px",
+  gridTemplateColumns: "340px 1fr",
+  marginBottom: "14px",
 };
 
 const detailsLabelStyle = {
-  fontSize: "8px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const detailsValueStyle = {
-  fontSize: "8px",
+  fontSize: "13px",
   fontWeight: "700",
   textTransform: "uppercase",
 };
 
 const documentItemStyle = {
-  width: "670px",
-  height: "34px",
-  border: "1.5px solid #000",
+  width: "100%",
+  minHeight: "72px",
+  border: "2px solid #000",
   background: "#F7F1E8",
   display: "grid",
-  gridTemplateColumns: "28px 1fr 28px 90px",
+  gridTemplateColumns: "50px 1fr 40px 140px",
   alignItems: "center",
-  padding: "0 12px",
-  marginBottom: "8px",
+  padding: "0 20px",
+  marginBottom: "16px",
+  boxSizing: "border-box",
 };
 
 const documentIconStyle = {
-  fontSize: "13px",
+  fontSize: "22px",
 };
 
 const documentTextStyle = {
@@ -766,83 +741,63 @@ const documentTextStyle = {
 
 const documentTitleStyle = {
   margin: 0,
-  fontSize: "8px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const documentNameStyle = {
-  margin: "1px 0 0",
-  fontSize: "8px",
+  margin: "4px 0 0",
+  fontSize: "13px",
   fontWeight: "700",
   textTransform: "uppercase",
 };
 
 const documentCheckStyle = {
-  fontSize: "12px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const uploadedTextStyle = {
-  fontSize: "8px",
+  fontSize: "12px",
   fontWeight: "800",
 };
 
 const notUploadedTextStyle = {
-  fontSize: "8px",
+  fontSize: "12px",
   fontWeight: "800",
   color: "red",
 };
 
 const noteBoxStyle = {
-  maxWidth: "800px",
-  margin: "16px auto 32px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1600px",
+  margin: "22px auto 0",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "18px 26px",
-  fontSize: "8px",
+  padding: "22px 30px",
+  fontSize: "13px",
   fontWeight: "700",
-};
-
-const footerStyle = {
-  background: "#fff",
-  borderTop: "1.5px solid #000",
-  borderBottom: "1.5px solid #000",
-  padding: "18px 120px",
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
-  textAlign: "center",
-};
-
-const footerCenterStyle = {
-  textAlign: "center",
-};
-
-const footerTitleStyle = {
-  margin: "0 0 8px",
-  fontSize: "12px",
-  fontWeight: "900",
-};
-
-const footerTextStyle = {
-  margin: "0 0 6px",
-  fontSize: "8px",
-  fontWeight: "600",
+  boxSizing: "border-box",
 };
 
 const loadingTextStyle = {
-  padding: "40px",
+  padding: "80px",
+  fontSize: "30px",
+  fontWeight: "900",
 };
 
 const errorBoxStyle = {
-  maxWidth: "800px",
+  width: "100%",
+  maxWidth: "1600px",
   margin: "20px auto",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "20px",
+  padding: "30px",
+  boxSizing: "border-box",
 };
 
 const errorTextStyle = {
   color: "red",
-  fontSize: "12px",
+  fontSize: "16px",
   fontWeight: "800",
 };
