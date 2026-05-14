@@ -8,7 +8,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  onSnapshot,
   query,
   where,
 } from "firebase/firestore";
@@ -40,149 +39,83 @@ export default function StudentPage() {
   const [notificationError, setNotificationError] = useState("");
 
   useEffect(() => {
-  const auth = getFirebaseAuth();
-  const db = getFirestoreDb();
+    const auth = getFirebaseAuth();
+    const db = getFirestoreDb();
 
-  let unsubscribeApplications = null;
-  let unsubscribeNotifications = null;
-
-  const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-    if (unsubscribeApplications) {
-      unsubscribeApplications();
-      unsubscribeApplications = null;
-    }
-
-    if (unsubscribeNotifications) {
-      unsubscribeNotifications();
-      unsubscribeNotifications = null;
-    }
-
-    if (!firebaseUser) {
-      router.replace("/");
-      return;
-    }
-
-    try {
-      const userRef = doc(db, "users", firebaseUser.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        setErrorMessage("Student profile not found.");
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser) {
+        router.replace("/");
         return;
       }
 
-      const userData = userSnap.data();
+      try {
+        const userRef = doc(db, "users", firebaseUser.uid);
+        const userSnap = await getDoc(userRef);
 
-      const userRole = String(userData?.role || "")
-        .trim()
-        .toLowerCase();
+        if (!userSnap.exists()) {
+          setErrorMessage("Student profile not found.");
+          setLoading(false);
+          return;
+        }
 
-      if (userRole !== "student") {
-        router.replace("/admin");
-        return;
-      }
+        const userData = userSnap.data();
 
-      setStudent(userData);
-      setErrorMessage("");
+        const userRole = String(userData?.role || "")
+          .trim()
+          .toLowerCase();
 
-      setApplicationsLoading(true);
-      setNotificationsLoading(true);
-      setApplicationError("");
-      setNotificationError("");
+        if (userRole !== "student") {
+          router.replace("/admin");
+          return;
+        }
 
-      const applicationsRef = collection(db, "applications");
+        setStudent(userData);
 
-      const applicationsQuery = query(
-        applicationsRef,
-        where("studentId", "==", firebaseUser.uid)
-      );
+        setApplicationsLoading(true);
+        setNotificationsLoading(true);
+        setApplicationError("");
+        setNotificationError("");
 
-      unsubscribeApplications = onSnapshot(
-        applicationsQuery,
-        (querySnapshot) => {
-          const fetchedApplications = querySnapshot.docs
-            .map((applicationDoc) => {
-              const data = applicationDoc.data();
-              return normaliseApplication(applicationDoc.id, data);
-            })
-            .sort((a, b) => {
-              return getApplicationTime(b) - getApplicationTime(a);
-            });
+        try {
+          const fetchedApplications = await fetchStudentApplications(
+            db,
+            firebaseUser
+          );
 
           setApplications(fetchedApplications);
-          setApplicationError("");
-          setApplicationsLoading(false);
-        },
-        (error) => {
-          console.error("Applications real-time error:", error);
+        } catch (error) {
+          console.error("Applications fetch error:", error);
           setApplicationError("Unable to load applications.");
           setApplications([]);
+        } finally {
           setApplicationsLoading(false);
         }
-      );
 
-      const notificationsRef = collection(db, "notifications");
-
-      const notificationsQuery = query(
-        notificationsRef,
-        where("studentId", "==", firebaseUser.uid)
-      );
-
-      unsubscribeNotifications = onSnapshot(
-        notificationsQuery,
-        (querySnapshot) => {
-          const fetchedNotifications = querySnapshot.docs
-            .map((notificationDoc) => {
-              const data = notificationDoc.data();
-
-              return {
-                documentId: notificationDoc.id,
-                message:
-                  data?.message ||
-                  data?.title ||
-                  data?.notificationText ||
-                  data?.body ||
-                  "Notification",
-                rawCreatedAt: data?.createdAt || data?.updatedAt || null,
-              };
-            })
-            .sort((a, b) => {
-              return getNotificationTime(b) - getNotificationTime(a);
-            });
+        try {
+          const fetchedNotifications = await fetchStudentNotifications(
+            db,
+            firebaseUser
+          );
 
           setNotifications(fetchedNotifications);
-          setNotificationError("");
-          setNotificationsLoading(false);
-        },
-        (error) => {
-          console.error("Notifications real-time error:", error);
+        } catch (error) {
+          console.error("Notifications fetch error:", error);
           setNotificationError("Unable to load notifications.");
           setNotifications([]);
+        } finally {
           setNotificationsLoading(false);
         }
-      );
 
-      setLoading(false);
-    } catch (error) {
-      console.error("Student page error:", error);
-      setErrorMessage("Unable to load student dashboard.");
-      setLoading(false);
-    }
-  });
+        setLoading(false);
+      } catch (error) {
+        console.error("Student page error:", error);
+        setErrorMessage("Unable to load student dashboard.");
+        setLoading(false);
+      }
+    });
 
-  return () => {
-    unsubscribeAuth();
-
-    if (unsubscribeApplications) {
-      unsubscribeApplications();
-    }
-
-    if (unsubscribeNotifications) {
-      unsubscribeNotifications();
-    }
-  };
-}, [router]);
+    return () => unsubscribe();
+  }, [router]);
 
   const handleLogout = async () => {
     const auth = getFirebaseAuth();
@@ -192,6 +125,14 @@ export default function StudentPage() {
 
   const handleStartNewApplication = () => {
     router.push("/student/application/new?reset=true");
+  };
+
+  const handleViewAllApplications = () => {
+    const overviewSection = document.getElementById("applications-overview");
+
+    if (overviewSection) {
+      overviewSection.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const handleProfile = () => {
@@ -288,6 +229,14 @@ export default function StudentPage() {
               onClick={handleStartNewApplication}
             >
               START NEW APPLICATION
+            </button>
+
+            <button
+              type="button"
+              style={actionButton}
+              onClick={handleViewAllApplications}
+            >
+              VIEW ALL APPLICATIONS
             </button>
 
             <button type="button" style={actionButton} onClick={handleProfile}>
@@ -599,108 +548,118 @@ function statusBadgeStyle(status) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "10px",
   fontFamily: "Arial, Helvetica, sans-serif",
+  boxSizing: "border-box",
 };
 
 const dashboardFrame = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  width: "100%",
+  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "0 110px 40px",
+  padding: "0 40px 50px",
+  boxSizing: "border-box",
 };
 
 const topHeaderStyle = {
-  height: "72px",
+  height: "110px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 28px",
-  margin: "0 -110px 18px",
-  borderBottom: "1px solid rgba(0,0,0,0.15)",
+  padding: "0 60px",
+  margin: "0 -40px 30px",
+  borderBottom: "2px solid #000",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "24px",
-  fontWeight: "800",
-  lineHeight: "24px",
+  fontSize: "48px",
+  fontWeight: "900",
+  lineHeight: "48px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const logoutButton = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  padding: "8px 24px",
-  fontSize: "11px",
+  padding: "14px 36px",
+  fontSize: "16px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
 const welcomeBarStyle = {
-  border: "1.5px solid #000",
-  background: "#F7F1E8",
+  border: "2px solid #000",
+  background: "#fff",
   textAlign: "center",
-  padding: "8px",
-  maxWidth: "900px",
-  margin: "0 auto 18px",
+  padding: "22px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
+  boxSizing: "border-box",
 };
 
 const welcomeTitleStyle = {
   margin: 0,
-  fontSize: "15px",
-  fontWeight: "800",
+  fontSize: "34px",
+  fontWeight: "900",
 };
 
 const welcomeTextStyle = {
-  margin: 0,
-  fontSize: "13px",
+  margin: "8px 0 0",
+  fontSize: "18px",
   fontWeight: "700",
 };
 
 const quickActionsStyle = {
-  maxWidth: "800px",
-  margin: "0 auto 18px",
-  border: "1.5px solid #000",
-  background: "#F7F1E8",
-  padding: "14px 26px 22px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
+  border: "2px solid #000",
+  background: "#fff",
+  padding: "28px 34px",
+  boxSizing: "border-box",
 };
 
 const sectionTitleStyle = {
-  margin: "0 0 12px",
-  fontSize: "11px",
-  fontWeight: "800",
+  margin: "0 0 20px",
+  fontSize: "18px",
+  fontWeight: "900",
 };
 
 const quickButtonRow = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
-  gap: "34px",
+  gridTemplateColumns: "repeat(4, 1fr)",
+  gap: "30px",
 };
 
 const actionButton = {
-  height: "30px",
+  height: "58px",
   background: "#fff",
-  border: "1.5px solid #000",
-  fontSize: "10px",
-  fontWeight: "700",
+  border: "2px solid #000",
+  fontSize: "15px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const trackingSectionStyle = {
-  maxWidth: "800px",
-  margin: "0 auto 14px",
-  border: "1.5px solid #000",
-  background: "#F7F1E8",
-  padding: "16px 26px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
+  border: "2px solid #000",
+  background: "#fff",
+  padding: "28px 34px",
+  boxSizing: "border-box",
 };
 
 const trackingGridStyle = {
@@ -710,108 +669,115 @@ const trackingGridStyle = {
 };
 
 const trackingBoxStyle = {
-  height: "100px",
+  height: "150px",
   background: "#fff",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  justifyContent: "flex-start",
-  paddingTop: "18px",
-  fontSize: "10px",
-  fontWeight: "700",
+  justifyContent: "center",
+  fontSize: "15px",
+  fontWeight: "800",
   color: "#1d1535",
 };
 
 const trackingCountStyle = {
   marginTop: "18px",
-  fontSize: "22px",
-  fontWeight: "800",
+  fontSize: "42px",
+  fontWeight: "900",
 };
 
 const bottomGridStyle = {
-  maxWidth: "800px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
   display: "grid",
-  gridTemplateColumns: "1fr 180px",
-  gap: "52px",
+  gridTemplateColumns: "1fr 380px",
+  gap: "40px",
   alignItems: "start",
 };
 
 const overviewBoxStyle = {
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "10px 14px 12px",
+  padding: "24px",
+  boxSizing: "border-box",
 };
 
 const tableStyle = {
   width: "100%",
   borderCollapse: "collapse",
-  fontSize: "9px",
+  fontSize: "15px",
 };
 
 const thStyle = {
   textAlign: "left",
-  fontWeight: "800",
-  padding: "5px 4px",
-  borderTop: "1px solid #000",
-  borderBottom: "1px solid #000",
+  fontWeight: "900",
+  padding: "16px 10px",
+  borderTop: "2px solid #000",
+  borderBottom: "2px solid #000",
 };
 
 const tdStyle = {
-  padding: "5px 4px",
+  padding: "16px 10px",
+  borderBottom: "1px solid #ccc",
 };
 
 const emptyRowStyle = {
-  padding: "12px 4px",
+  padding: "24px 10px",
   textAlign: "center",
   fontWeight: "700",
 };
 
 const detailsButton = {
-  background: "transparent",
+  background: "#3B2E5A",
+  color: "#fff",
   border: "none",
-  fontSize: "8px",
-  fontWeight: "700",
+  padding: "10px 14px",
+  fontSize: "13px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const applicationErrorStyle = {
   color: "red",
-  fontSize: "10px",
-  fontWeight: "700",
-  margin: "0 0 8px",
+  fontSize: "14px",
+  fontWeight: "800",
+  margin: "0 0 12px",
 };
 
 const notificationsBoxStyle = {
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
 };
 
 const notificationTitleStyle = {
   margin: 0,
-  padding: "10px 14px",
-  fontSize: "11px",
-  fontWeight: "800",
-  borderBottom: "1.5px solid #000",
+  padding: "20px 24px",
+  fontSize: "18px",
+  fontWeight: "900",
+  borderBottom: "2px solid #000",
 };
 
 const notificationListStyle = {
-  padding: "10px 22px 18px",
+  padding: "22px 28px 28px",
 };
 
 const notificationItemStyle = {
-  fontSize: "10px",
-  margin: "0 0 18px",
+  fontSize: "15px",
+  lineHeight: "1.5",
+  margin: "0 0 20px",
 };
 
 const notificationErrorStyle = {
   color: "red",
-  fontSize: "10px",
-  fontWeight: "700",
+  fontSize: "14px",
+  fontWeight: "800",
   margin: "0 0 18px",
 };
 
 const loadingText = {
-  padding: "40px",
+  padding: "60px",
+  fontSize: "30px",
+  fontWeight: "900",
 };

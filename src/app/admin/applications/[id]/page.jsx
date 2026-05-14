@@ -100,8 +100,6 @@ export default function ApplicationDetailsPage() {
       return;
     }
 
-    
-
     const selectedApplicationId = application.id || applicationId;
 
     if (typeof window !== "undefined") {
@@ -354,6 +352,7 @@ export default function ApplicationDetailsPage() {
                         style={{
                           accentColor: STATUS_COLOURS[status],
                           cursor: "pointer",
+                          transform: "scale(1.4)",
                         }}
                       />
                       <span>{status.toUpperCase()}</span>
@@ -496,27 +495,28 @@ function statusBadgeStyle(status) {
 
   return {
     display: "inline-block",
-    minWidth: "150px",
-    padding: "9px 12px",
-    border: "1.5px solid #000",
+    minWidth: "100%",
+    padding: "18px 20px",
+    border: "2px solid #000",
     background,
     color: displayStatus === "Under Review" ? "#000" : "#fff",
-    fontSize: "10px",
+    fontSize: "20px",
     fontWeight: "900",
     textTransform: "uppercase",
     textAlign: "center",
+    boxSizing: "border-box",
   };
 }
 
 function decisionRadioLabelStyle(status, selected) {
   return {
-    border: "1.5px solid #3B2E5A",
-    minHeight: "30px",
+    border: "2px solid #3B2E5A",
+    minHeight: "70px",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    padding: "0 8px",
-    fontSize: "8px",
+    gap: "16px",
+    padding: "0 20px",
+    fontSize: "18px",
     fontWeight: "900",
     cursor: "pointer",
     background: selected ? STATUS_COLOURS[status] : "#fff",
@@ -529,118 +529,126 @@ function decisionRadioLabelStyle(status, selected) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100vw",
+  maxWidth: "100vw",
+  overflowX: "hidden",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "20px",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#071126",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  width: "100%",
+  minHeight: "calc(100vh - 40px)",
+  border: "2px solid #000",
   background: "#F7F1E8",
 };
 
 const headerStyle = {
-  height: "58px",
+  minHeight: "120px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 95px",
-  borderBottom: "1px solid rgba(0,0,0,0.15)",
+  padding: "0 60px",
+  borderBottom: "2px solid rgba(0,0,0,0.15)",
+  flexWrap: "wrap",
+  gap: "20px",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "20px",
+  fontSize: "48px",
   fontWeight: "900",
-  lineHeight: "20px",
+  lineHeight: "48px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "8px",
-  lineHeight: "10px",
+  margin: "10px 0 0",
+  fontSize: "16px",
+  lineHeight: "24px",
   fontWeight: "500",
 };
 
 const navStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "65px",
+  gap: "20px",
+  flexWrap: "wrap",
 };
 
 const navButtonStyle = {
-  width: "74px",
-  height: "28px",
+  minWidth: "180px",
+  height: "60px",
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  fontSize: "8px",
+  fontSize: "18px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const referenceBarStyle = {
-  maxWidth: "780px",
-  margin: "18px auto 14px",
-  border: "1.5px solid #000",
+  width: "calc(100% - 80px)",
+  margin: "30px auto",
+  border: "2px solid #000",
   background: "#fff",
-  minHeight: "36px",
-  padding: "8px 14px",
+  minHeight: "90px",
+  padding: "20px 30px",
   boxSizing: "border-box",
   display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
+  gridTemplateColumns: "repeat(3, 1fr)",
   alignItems: "center",
-  gap: "10px",
-  fontSize: "8px",
+  gap: "20px",
+  fontSize: "18px",
   fontWeight: "700",
 };
 
 const contentGridStyle = {
-  maxWidth: "780px",
+  width: "calc(100% - 80px)",
   margin: "0 auto 40px",
   display: "grid",
-  gridTemplateColumns: "1fr 240px",
-  gap: "24px",
+  gridTemplateColumns: "2fr 1fr",
+  gap: "30px",
+  alignItems: "start",
 };
 
 const leftColumnStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: "14px",
+  gap: "24px",
 };
 
 const rightColumnStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: "14px",
+  gap: "24px",
 };
 
 const panelStyle = {
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "10px 14px",
+  padding: "24px 30px",
 };
 
 const panelTitleStyle = {
-  margin: "0 0 10px",
-  fontSize: "10px",
+  margin: "0 0 20px",
+  fontSize: "24px",
   fontWeight: "900",
 };
 
 const panelContentStyle = {
-  borderTop: "1px solid #000",
-  paddingTop: "8px",
+  borderTop: "2px solid #000",
+  paddingTop: "20px",
 };
 
 const infoRowStyle = {
   display: "grid",
-  gridTemplateColumns: "150px 1fr",
-  gap: "12px",
-  marginBottom: "6px",
-  fontSize: "8px",
+  gridTemplateColumns: "280px 1fr",
+  gap: "20px",
+  marginBottom: "20px",
+  fontSize: "18px",
 };
 
 const infoLabelStyle = {
@@ -650,71 +658,72 @@ const infoLabelStyle = {
 
 const infoValueStyle = {
   fontWeight: "500",
+  wordBreak: "break-word",
 };
 
 const sidePanelStyle = {
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "10px 12px",
+  padding: "24px",
 };
 
 const sidePanelTitleStyle = {
-  margin: "0 0 8px",
-  paddingBottom: "6px",
-  borderBottom: "1px solid #000",
-  fontSize: "9px",
+  margin: "0 0 18px",
+  paddingBottom: "14px",
+  borderBottom: "2px solid #000",
+  fontSize: "20px",
   fontWeight: "900",
 };
 
 const smallTextStyle = {
-  margin: "8px 0 0",
-  fontSize: "8px",
+  margin: "16px 0 0",
+  fontSize: "16px",
   fontWeight: "700",
 };
 
 const notesTextareaStyle = {
   width: "100%",
-  height: "58px",
-  border: "1.5px solid #000",
-  resize: "none",
-  padding: "8px",
+  minHeight: "180px",
+  border: "2px solid #000",
+  resize: "vertical",
+  padding: "16px",
   boxSizing: "border-box",
-  fontSize: "8px",
+  fontSize: "16px",
   outline: "none",
 };
 
 const historyListStyle = {
   margin: 0,
-  paddingLeft: "14px",
-  fontSize: "8px",
-  lineHeight: "14px",
+  paddingLeft: "24px",
+  fontSize: "16px",
+  lineHeight: "30px",
   fontWeight: "700",
 };
 
 const radioGroupStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: "7px",
+  gap: "16px",
 };
 
 const processButtonStyle = {
   width: "100%",
-  height: "30px",
+  height: "80px",
   background: "#3B2E5A",
   color: "#fff",
-  border: "1.5px solid #3B2E5A",
-  fontSize: "9px",
+  border: "2px solid #3B2E5A",
+  fontSize: "22px",
   fontWeight: "900",
   cursor: "pointer",
 };
 
 const bottomBackButtonStyle = {
-  width: "150px",
-  height: "30px",
+  width: "100%",
+  height: "80px",
   background: "#3B2E5A",
   color: "#fff",
-  border: "1.5px solid #3B2E5A",
-  fontSize: "8px",
+  border: "2px solid #3B2E5A",
+  fontSize: "20px",
   fontWeight: "900",
   cursor: "pointer",
 };
@@ -722,23 +731,23 @@ const bottomBackButtonStyle = {
 const documentsListStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: "6px",
+  gap: "14px",
 };
 
 const documentItemStyle = {
   display: "grid",
-  gridTemplateColumns: "20px 1fr 1fr 70px",
+  gridTemplateColumns: "50px 2fr 2fr 180px",
   alignItems: "center",
-  gap: "6px",
-  border: "1px solid #000",
-  minHeight: "24px",
-  padding: "4px 8px",
-  fontSize: "7px",
+  gap: "16px",
+  border: "2px solid #000",
+  minHeight: "80px",
+  padding: "12px 20px",
+  fontSize: "16px",
   fontWeight: "800",
 };
 
 const documentIconStyle = {
-  fontSize: "10px",
+  fontSize: "26px",
 };
 
 const documentNameStyle = {
@@ -747,6 +756,7 @@ const documentNameStyle = {
 
 const documentFileStyle = {
   color: "#333",
+  wordBreak: "break-word",
 };
 
 const documentStatusStyle = {
@@ -757,14 +767,14 @@ const documentStatusStyle = {
 const successMessageStyle = {
   margin: 0,
   color: "#48A111",
-  fontSize: "9px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const errorMessageStyle = {
   margin: 0,
   color: "#EF5350",
-  fontSize: "9px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
@@ -773,38 +783,39 @@ const loadingBoxStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "16px",
+  fontSize: "32px",
   fontWeight: "800",
 };
 
 const errorBoxStyle = {
-  maxWidth: "700px",
-  margin: "60px auto",
-  border: "1.5px solid #000",
+  width: "90%",
+  maxWidth: "1000px",
+  margin: "80px auto",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "24px",
+  padding: "40px",
 };
 
 const errorTitleStyle = {
-  margin: "0 0 12px",
-  fontSize: "20px",
+  margin: "0 0 20px",
+  fontSize: "42px",
   fontWeight: "900",
 };
 
 const errorTextStyle = {
   color: "#EF5350",
-  fontSize: "12px",
+  fontSize: "22px",
   fontWeight: "800",
 };
 
 const primaryButtonStyle = {
-  marginTop: "16px",
-  width: "150px",
-  height: "32px",
+  marginTop: "30px",
+  width: "280px",
+  height: "70px",
   background: "#3B2E5A",
   color: "#fff",
-  border: "1.5px solid #3B2E5A",
-  fontSize: "9px",
+  border: "2px solid #3B2E5A",
+  fontSize: "18px",
   fontWeight: "900",
   cursor: "pointer",
 };

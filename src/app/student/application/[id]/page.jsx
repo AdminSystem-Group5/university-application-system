@@ -231,7 +231,7 @@ export default function ApplicationDetailsPage() {
           APPLICATION DETAILS PAGE.
         </section>
 
-        
+        <Footer />
       </div>
     </main>
   );
@@ -316,6 +316,39 @@ function DocumentItem({ title, documentData }) {
   );
 }
 
+function Footer() {
+  return (
+    <footer style={footerStyle}>
+      <div>
+        <h4 style={footerTitleStyle}>NAVIGATION</h4>
+        <p style={footerTextStyle}>PARTNERS</p>
+        <p style={footerTextStyle}>ABOUT US</p>
+      </div>
+
+      <div style={footerCenterStyle}>
+        <h4 style={footerTitleStyle}>UAAMS</h4>
+        <p style={footerTextStyle}>
+          UNIVERSITY ADMINISTRATION & APPLICATION
+          <br />
+          MANAGEMENT SYSTEM
+        </p>
+        <p style={footerTextStyle}>
+          FULL ADDRESS
+          <br />
+          EMAIL ADDRESS
+          <br />
+          FULL PHONE NUMBER
+        </p>
+      </div>
+
+      <div>
+        <h4 style={footerTitleStyle}>SUPPORT</h4>
+        <p style={footerTextStyle}>PRIVACY POLICY</p>
+        <p style={footerTextStyle}>TERMS & CONDITIONS</p>
+      </div>
+    </footer>
+  );
+}
 
 function normaliseApplication(documentId, data) {
   const status =
@@ -770,6 +803,31 @@ const noteBoxStyle = {
   fontWeight: "700",
 };
 
+const footerStyle = {
+  background: "#fff",
+  borderTop: "1.5px solid #000",
+  borderBottom: "1.5px solid #000",
+  padding: "18px 120px",
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+  textAlign: "center",
+};
+
+const footerCenterStyle = {
+  textAlign: "center",
+};
+
+const footerTitleStyle = {
+  margin: "0 0 8px",
+  fontSize: "12px",
+  fontWeight: "900",
+};
+
+const footerTextStyle = {
+  margin: "0 0 6px",
+  fontSize: "8px",
+  fontWeight: "600",
+};
 
 const loadingTextStyle = {
   padding: "40px",

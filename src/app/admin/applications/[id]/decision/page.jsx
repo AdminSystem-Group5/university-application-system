@@ -173,7 +173,7 @@ export default function DecisionPage() {
       setErrorMessage("");
 
       await updateApplicationStatus(
-        applicationDocumentId,
+        application.id,
         selectedDecision,
         {
           uid: firebaseUser.uid,
@@ -367,7 +367,7 @@ export default function DecisionPage() {
                 type="button"
                 style={backButtonStyle}
                 onClick={() =>
-                  router.push(`/admin/applications/${applicationDocumentId}`)
+                  router.push(`/admin/applications/${application.id}`)
                 }
               >
                 BACK TO APPLICATION
@@ -526,122 +526,133 @@ function warningBoxStyle(status) {
 const pageStyle = {
   minHeight: "100vh",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "10px",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#071126",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  border: "2px solid #000",
   background: "#F7F1E8",
   position: "relative",
+  width: "100%",
 };
 
 const headerStyle = {
-  height: "74px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto",
+  minHeight: "110px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 130px",
+  padding: "0 50px",
+  boxSizing: "border-box",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "28px",
+  fontSize: "52px",
   fontWeight: "900",
-  lineHeight: "28px",
+  lineHeight: "50px",
 };
 
 const subtitleStyle = {
-  margin: "3px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const navStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "70px",
+  gap: "40px",
 };
 
 const navButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#000",
-  minWidth: "84px",
-  height: "34px",
-  fontSize: "9px",
+  minWidth: "160px",
+  height: "52px",
+  fontSize: "15px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
 const topBarStyle = {
-  maxWidth: "900px",
-  height: "52px",
-  margin: "16px auto 24px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "90px",
+  margin: "24px auto 30px",
+  border: "2px solid #000",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 46px",
+  padding: "20px 40px",
+  boxSizing: "border-box",
 };
 
 const topBarTitleStyle = {
   margin: 0,
-  fontSize: "11px",
+  fontSize: "22px",
   fontWeight: "900",
 };
 
 const topBarSubtitleStyle = {
-  margin: "3px 0 0",
-  fontSize: "8px",
+  margin: "6px 0 0",
+  fontSize: "13px",
   fontWeight: "700",
+  lineHeight: "18px",
 };
 
 const topBarIdBoxStyle = {
-  fontSize: "9px",
-  lineHeight: "12px",
+  fontSize: "14px",
+  lineHeight: "20px",
 };
 
 const smallLabelStyle = {
   margin: 0,
-  fontSize: "8px",
+  fontSize: "12px",
   fontWeight: "800",
 };
 
 const contentWrapperStyle = {
-  display: "flex",
-  justifyContent: "center",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto",
+  padding: "0 20px",
+  boxSizing: "border-box",
 };
 
 const mainPanelStyle = {
-  width: "520px",
+  width: "100%",
 };
 
 const sectionBoxStyle = {
   background: "#fff",
-  border: "1.5px solid #000",
-  padding: "14px 24px",
-  marginBottom: "18px",
+  border: "2px solid #000",
+  padding: "28px 34px",
+  marginBottom: "26px",
 };
 
 const sectionTitleStyle = {
-  margin: "0 0 10px",
-  paddingBottom: "7px",
-  borderBottom: "1px solid #000",
-  fontSize: "10px",
+  margin: "0 0 18px",
+  paddingBottom: "12px",
+  borderBottom: "2px solid #000",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const infoRowStyle = {
   display: "grid",
-  gridTemplateColumns: "170px 1fr",
+  gridTemplateColumns: "320px 1fr",
   alignItems: "center",
-  marginBottom: "8px",
-  fontSize: "9px",
+  marginBottom: "16px",
+  fontSize: "15px",
 };
 
 const infoLabelStyle = {
@@ -654,17 +665,17 @@ const infoValueStyle = {
 
 const textareaLabelStyle = {
   display: "block",
-  marginBottom: "5px",
-  fontSize: "8px",
+  marginBottom: "10px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const textareaStyle = {
   width: "100%",
-  minHeight: "82px",
-  border: "1.5px solid #000",
-  padding: "10px",
-  fontSize: "9px",
+  minHeight: "180px",
+  border: "2px solid #000",
+  padding: "16px",
+  fontSize: "14px",
   resize: "vertical",
   outline: "none",
   boxSizing: "border-box",
@@ -673,47 +684,48 @@ const textareaStyle = {
 const checkItemStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "8px",
-  marginBottom: "8px",
-  fontSize: "9px",
+  gap: "12px",
+  marginBottom: "14px",
+  fontSize: "14px",
   fontWeight: "700",
 };
 
 const checkIconStyle = {
   fontWeight: "900",
+  fontSize: "16px",
 };
 
 const importantTextStyle = {
   margin: 0,
-  fontSize: "8px",
-  lineHeight: "14px",
+  fontSize: "13px",
+  lineHeight: "24px",
   fontWeight: "700",
 };
 
 const buttonRowStyle = {
   display: "flex",
   justifyContent: "space-between",
-  marginTop: "4px",
+  marginTop: "20px",
 };
 
 const backButtonStyle = {
-  width: "170px",
-  height: "32px",
+  width: "260px",
+  height: "56px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "9px",
+  fontSize: "14px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const proceedButtonStyle = {
-  width: "170px",
-  height: "32px",
+  width: "260px",
+  height: "56px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "9px",
+  fontSize: "14px",
   fontWeight: "800",
   cursor: "pointer",
 };
@@ -736,50 +748,50 @@ const blurBackgroundStyle = {
 
 const modalBoxStyle = {
   position: "relative",
-  width: "340px",
+  width: "600px",
   background: "#fff",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   zIndex: 1001,
 };
 
 const modalHeaderStyle = {
   background: "#3B2E5A",
   color: "#fff",
-  padding: "18px 28px",
-  fontSize: "11px",
+  padding: "24px 32px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const modalBodyStyle = {
-  padding: "20px 52px 24px",
+  padding: "30px 40px",
 };
 
 const modalQuestionStyle = {
-  margin: "0 0 12px",
-  fontSize: "9px",
+  margin: "0 0 18px",
+  fontSize: "15px",
   fontWeight: "900",
 };
 
 const summaryBoxStyle = {
-  border: "1.5px solid #000",
-  padding: "10px",
-  marginBottom: "14px",
+  border: "2px solid #000",
+  padding: "18px",
+  marginBottom: "20px",
 };
 
 const summaryTitleStyle = {
-  margin: "0 0 10px",
-  paddingBottom: "6px",
+  margin: "0 0 14px",
+  paddingBottom: "8px",
   borderBottom: "1px solid #000",
-  fontSize: "8px",
+  fontSize: "13px",
   fontWeight: "900",
 };
 
 const modalInfoRowStyle = {
   display: "grid",
-  gridTemplateColumns: "90px 1fr",
+  gridTemplateColumns: "180px 1fr",
   alignItems: "center",
-  marginBottom: "12px",
-  fontSize: "8px",
+  marginBottom: "14px",
+  fontSize: "13px",
 };
 
 const modalButtonRowStyle = {
@@ -788,22 +800,22 @@ const modalButtonRowStyle = {
 };
 
 const cancelModalButtonStyle = {
-  width: "72px",
-  height: "28px",
+  width: "140px",
+  height: "46px",
   background: "#fff",
-  border: "1px solid #000",
-  fontSize: "8px",
+  border: "2px solid #000",
+  fontSize: "13px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
 const confirmButtonStyle = {
-  width: "92px",
-  height: "28px",
+  width: "180px",
+  height: "46px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "8px",
+  fontSize: "13px",
   fontWeight: "800",
   cursor: "pointer",
 };
@@ -813,54 +825,54 @@ const loadingStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "16px",
+  fontSize: "24px",
   fontWeight: "800",
 };
 
 const errorBoxStyle = {
-  maxWidth: "500px",
-  margin: "80px auto",
-  border: "1.5px solid #000",
+  maxWidth: "700px",
+  margin: "120px auto",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "30px",
+  padding: "40px",
 };
 
 const errorTextStyle = {
   color: "red",
-  fontSize: "12px",
+  fontSize: "18px",
   fontWeight: "800",
 };
 
 const darkButtonStyle = {
-  marginTop: "18px",
+  marginTop: "24px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  padding: "10px 18px",
-  fontSize: "10px",
+  padding: "14px 24px",
+  fontSize: "14px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const inlineErrorStyle = {
   background: "#fff",
-  border: "1.5px solid #EF5350",
+  border: "2px solid #EF5350",
   color: "#EF5350",
-  padding: "10px 14px",
-  marginBottom: "18px",
-  fontSize: "9px",
+  padding: "14px 18px",
+  marginBottom: "24px",
+  fontSize: "14px",
   fontWeight: "800",
 };
 
 const messagePreviewStyle = {
-  border: "1.5px solid #000",
-  padding: "10px",
-  marginBottom: "14px",
+  border: "2px solid #000",
+  padding: "16px",
+  marginBottom: "20px",
 };
 
 const messagePreviewTextStyle = {
   margin: 0,
-  fontSize: "8px",
-  lineHeight: "13px",
+  fontSize: "13px",
+  lineHeight: "22px",
   fontWeight: "700",
 };

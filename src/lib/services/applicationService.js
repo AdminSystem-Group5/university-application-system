@@ -1,13 +1,12 @@
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
-  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
   updateDoc,
 } from "firebase/firestore";
 
@@ -26,33 +25,21 @@ export async function getApplicationById(id) {
   }
 
   return {
-    ...snapshot.data(),
     id: snapshot.id,
-    documentId: snapshot.id,
+    ...snapshot.data(),
   };
 }
 
-export function subscribeToApplications(onApplicationsChange, onError) {
+export async function getApplications() {
   const db = getFirestoreDb();
   const applicationsRef = collection(db, "applications");
   const q = query(applicationsRef, orderBy("submittedAt", "desc"));
+  const snapshot = await getDocs(q);
 
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const applications = snapshot.docs.map((docSnap) => ({
-        ...docSnap.data(),
-        id: docSnap.id,
-        documentId: docSnap.id,
-      }));
-
-      onApplicationsChange(applications);
-    },
-    (error) => {
-      console.error("Error listening to applications:", error);
-      onError?.(error);
-    }
-  );
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  }));
 }
 
 export async function updateApplicationStatus(

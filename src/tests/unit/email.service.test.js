@@ -15,7 +15,7 @@ describe("Email service", () => {
   it("builds offer decision email", () => {
     const html = buildDecisionEmail("Andreea", "Offer");
     expect(html).toContain("Andreea");
-    expect(html).toContain("Offer");
+    expect(html).toContain("received an offer");
   });
 
   it("builds registration email", () => {

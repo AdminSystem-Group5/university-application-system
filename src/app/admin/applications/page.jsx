@@ -1,17 +1,19 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminFilters from "@/components/admin/AdminFilters";
 import ApplicationsTable from "@/components/admin/ApplicationsTable";
 import {
-  subscribeToApplications,
+  getApplications,
   updateApplicationStatus,
 } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
   const router = useRouter();
+  const hasFetchedRef = useRef(false);
 
   const {
     firebaseUser,
@@ -31,6 +33,21 @@ export default function AdminPage() {
   const [messageType, setMessageType] = useState("success");
   const [pageLoading, setPageLoading] = useState(true);
 
+  const fetchData = useCallback(async () => {
+    try {
+      setPageLoading(true);
+      setMessage("");
+
+      const data = await getApplications();
+      setApplications(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error loading applications:", error);
+      setMessage("Failed to load applications.");
+      setMessageType("error");
+    } finally {
+      setPageLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!message) return;
@@ -56,22 +73,11 @@ export default function AdminPage() {
       return;
     }
 
-   setPageLoading(true);
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
 
-const unsubscribe = subscribeToApplications(
-  (data) => {
-    setApplications(Array.isArray(data) ? data : []);
-    setPageLoading(false);
-  },
-  () => {
-    setMessage("Failed to load applications.");
-    setMessageType("error");
-    setPageLoading(false);
-  }
-);
-
-return () => unsubscribe();
-  }, [isLoading, firebaseUser, isUniversityAdmin, router]);
+    fetchData();
+  }, [isLoading, firebaseUser, isUniversityAdmin, router, fetchData]);
 
   const filteredApplications = useMemo(() => {
     let filtered = [...applications];
@@ -121,6 +127,8 @@ return () => unsubscribe();
           "Admin",
       });
 
+      await fetchData();
+
       setMessage("Status updated successfully.");
       setMessageType("success");
     } catch (error) {
@@ -135,7 +143,7 @@ return () => unsubscribe();
   const handleLogout = async () => {
     try {
       await signOut();
-      router.replace("/");
+      router.replace("/login");
     } catch (error) {
       console.error("Logout error:", error);
       setMessage("Failed to log out. Please try again.");
@@ -145,37 +153,43 @@ return () => unsubscribe();
 
   if (isLoading || pageLoading) {
     return (
-      <main className="min-h-screen bg-gray-50 p-6">
-        <div className="mx-auto max-w-7xl animate-pulse">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <div className="h-8 w-80 rounded bg-gray-200" />
-              <div className="mt-3 h-4 w-96 rounded bg-gray-200" />
+      <main className="min-h-screen w-full bg-[#F7F1E8] px-8 py-10 2xl:px-16">
+        <div className="w-full animate-pulse">
+          <div className="mb-10 flex flex-col gap-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className="w-full">
+              <div className="h-20 w-full max-w-[900px] rounded-3xl bg-gray-300" />
+              <div className="mt-6 h-8 w-full max-w-[1200px] rounded-3xl bg-gray-200" />
             </div>
-            <div className="h-10 w-24 rounded bg-gray-200" />
+
+            <div className="h-24 w-full max-w-[260px] rounded-3xl bg-gray-300" />
           </div>
 
-          <div className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
-            <div className="mb-4 h-6 w-32 rounded bg-gray-200" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+            <div className="mb-10 h-10 w-72 rounded-2xl bg-gray-300" />
+
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               {Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-24 rounded-xl bg-gray-100" />
+                <div
+                  key={index}
+                  className="h-56 rounded-[30px] bg-gray-100"
+                />
               ))}
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
-            <div className="mb-4 h-6 w-24 rounded bg-gray-200" />
-            <div className="flex flex-col gap-4 md:flex-row">
-              <div className="h-10 w-full rounded bg-gray-100 md:w-80" />
-              <div className="h-10 w-full rounded bg-gray-100 md:w-48" />
-              <div className="h-10 w-full rounded bg-gray-100 md:w-48" />
+          <div className="mt-12 rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+            <div className="mb-10 h-10 w-56 rounded-2xl bg-gray-300" />
+
+            <div className="flex flex-col gap-8 2xl:flex-row">
+              <div className="h-24 w-full rounded-2xl bg-gray-100" />
+              <div className="h-24 w-full rounded-2xl bg-gray-100" />
+              <div className="h-24 w-full rounded-2xl bg-gray-100" />
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
-            <div className="mb-4 h-6 w-36 rounded bg-gray-200" />
-            <div className="h-72 rounded bg-gray-100" />
+          <div className="mt-12 rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+            <div className="mb-10 h-10 w-80 rounded-2xl bg-gray-300" />
+            <div className="h-[700px] rounded-[30px] bg-gray-100" />
           </div>
         </div>
       </main>
@@ -183,68 +197,95 @@ return () => unsubscribe();
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              University Admin Dashboard
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Manage student applications, review statuses, and track decisions.
-            </p>
-          </div>
+    <main className="min-h-screen w-full bg-[#F7F1E8] px-8 py-10 2xl:px-16">
+      <div className="w-full">
+        <div className="rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+          <div className="flex flex-col gap-10 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <div className="w-full">
+              <h1 className="text-5xl font-black leading-none tracking-tight text-gray-900 md:text-6xl xl:text-7xl 2xl:text-8xl">
+                University Admin Dashboard
+              </h1>
 
-          <button
-            onClick={handleLogout}
-            className="rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-          >
-            Logout
-          </button>
+              <p className="mt-8 w-full text-xl leading-relaxed text-gray-600 md:text-2xl xl:text-3xl">
+                Manage student applications, monitor admissions,
+                review statuses, approve decisions, and oversee the
+                entire university application system from one place.
+              </p>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="h-20 w-full rounded-3xl bg-red-600 px-12 text-2xl font-black text-white transition hover:bg-red-700 md:h-24 md:max-w-[260px] md:text-3xl"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         {message && (
           <div
-            className={`mt-6 rounded-lg border px-4 py-3 text-sm ${
+            className={`mt-10 rounded-3xl border-4 px-10 py-8 text-xl font-bold shadow-lg md:text-2xl ${
               messageType === "success"
-                ? "border-green-200 bg-green-50 text-green-800"
-                : "border-red-200 bg-red-50 text-red-800"
+                ? "border-green-300 bg-green-50 text-green-800"
+                : "border-red-300 bg-red-50 text-red-800"
             }`}
           >
             {message}
           </div>
         )}
 
-        <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Summary</h2>
-          <AdminStatsCards applications={filteredApplications} />
+        <section className="mt-12 rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+          <h2 className="mb-10 text-4xl font-black text-gray-900 md:text-5xl xl:text-6xl">
+            Summary
+          </h2>
+
+          <div className="w-full">
+            <AdminStatsCards applications={filteredApplications} />
+          </div>
         </section>
 
-        <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Filters</h2>
-          <AdminFilters
-            search={search}
-            setSearch={setSearch}
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            courseFilter={courseFilter}
-            setCourseFilter={setCourseFilter}
-          />
+        <section className="mt-12 rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+          <h2 className="mb-10 text-4xl font-black text-gray-900 md:text-5xl xl:text-6xl">
+            Filters
+          </h2>
+
+          <div className="w-full">
+            <AdminFilters
+              search={search}
+              setSearch={setSearch}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              courseFilter={courseFilter}
+              setCourseFilter={setCourseFilter}
+            />
+          </div>
         </section>
 
-        <section className="mt-6 rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-xl font-semibold">Applications</h2>
+        <section className="mt-12 rounded-[40px] border-4 border-black bg-white p-10 shadow-2xl 2xl:p-16">
+          <div className="mb-10 flex flex-col gap-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
+            <h2 className="text-4xl font-black text-gray-900 md:text-5xl xl:text-6xl">
+              Applications
+            </h2>
+
+            <div className="rounded-2xl bg-[#3B2E5A] px-10 py-5 text-2xl font-black text-white md:text-3xl">
+              {filteredApplications.length} Applications Found
+            </div>
+          </div>
 
           {filteredApplications.length === 0 ? (
-            <div className="rounded-lg border border-dashed bg-gray-50 px-6 py-10 text-center text-gray-500">
+            <div className="rounded-3xl border-4 border-dashed border-gray-300 bg-gray-50 px-16 py-28 text-center text-3xl font-bold text-gray-500 md:text-4xl">
               No applications match the current filters.
             </div>
           ) : (
-            <ApplicationsTable
-              applications={filteredApplications}
-              onStatusChange={handleStatusChange}
-              updatingId={updatingId}
-            />
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[1600px]">
+                <ApplicationsTable
+                  applications={filteredApplications}
+                  onStatusChange={handleStatusChange}
+                  updatingId={updatingId}
+                />
+              </div>
+            </div>
           )}
         </section>
       </div>

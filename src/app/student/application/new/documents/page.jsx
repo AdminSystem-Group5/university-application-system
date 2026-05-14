@@ -373,72 +373,78 @@ function formatFileSize(bytes) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "10px",
   fontFamily: "Arial, Helvetica, sans-serif",
+  boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  width: "100%",
+  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "0 110px 40px",
+  padding: "0 40px 60px",
+  boxSizing: "border-box",
 };
 
 const headerStyle = {
-  height: "72px",
+  minHeight: "110px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 28px",
-  margin: "0 -110px 8px",
-  borderBottom: "1px solid rgba(0,0,0,0.15)",
+  padding: "0 60px",
+  margin: "0 -40px 30px",
+  borderBottom: "2px solid #000",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "24px",
-  fontWeight: "800",
-  lineHeight: "24px",
+  fontSize: "48px",
+  fontWeight: "900",
+  lineHeight: "48px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const logoutButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  padding: "8px 24px",
-  fontSize: "11px",
+  padding: "14px 36px",
+  fontSize: "16px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
 const titleBarStyle = {
-  maxWidth: "900px",
-  height: "36px",
-  margin: "0 auto 18px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "90px",
+  margin: "0 auto 30px",
+  border: "2px solid #000",
   display: "grid",
-  gridTemplateColumns: "180px 1fr 180px",
+  gridTemplateColumns: "300px 1fr 300px",
   alignItems: "center",
-  background: "#F7F1E8",
+  background: "#fff",
+  boxSizing: "border-box",
 };
 
 const backDashboardButtonStyle = {
-  marginLeft: "20px",
-  width: "130px",
-  height: "24px",
+  marginLeft: "30px",
+  width: "220px",
+  height: "48px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "9px",
-  fontWeight: "700",
+  fontSize: "14px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
@@ -448,127 +454,135 @@ const titleTextWrapperStyle = {
 
 const pageTitleStyle = {
   margin: 0,
-  fontSize: "16px",
-  fontWeight: "800",
+  fontSize: "30px",
+  fontWeight: "900",
 };
 
 const pageSubtitleStyle = {
-  margin: 0,
-  fontSize: "8px",
-  fontWeight: "700",
+  margin: "8px 0 0",
+  fontSize: "13px",
+  fontWeight: "800",
 };
 
 const stepWrapperStyle = {
-  maxWidth: "900px",
-  margin: "0 auto 12px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
   display: "grid",
   gridTemplateColumns: "1fr 1fr 1fr",
-  gap: "30px",
-  fontSize: "8px",
-  fontWeight: "700",
+  gap: "34px",
+  fontSize: "15px",
+  fontWeight: "800",
 };
 
 const stepItemStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "16px",
+  gap: "20px",
 };
 
 const activeStepItemStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "16px",
+  gap: "20px",
   fontWeight: "900",
 };
 
 const stepLineStyle = {
   flex: 1,
-  borderTop: "1px dashed #999",
+  borderTop: "2px dashed #999",
 };
 
 const activeStepLineStyle = {
   flex: 1,
-  borderTop: "1px dashed #333",
+  borderTop: "2px dashed #000",
 };
 
 const formBoxStyle = {
-  maxWidth: "900px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "22px 66px 14px",
+  padding: "34px 60px 32px",
+  boxSizing: "border-box",
 };
 
 const requirementsBoxStyle = {
   background: "#F7F1E8",
-  padding: "10px 18px",
-  marginBottom: "10px",
+  border: "2px solid #000",
+  padding: "24px 30px",
+  marginBottom: "30px",
 };
 
 const requirementsTitleStyle = {
-  margin: 0,
-  fontSize: "9px",
+  margin: "0 0 12px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const requirementsListStyle = {
-  margin: "4px 0 0",
-  paddingLeft: "16px",
-  fontSize: "8px",
-  fontWeight: "700",
+  margin: "0",
+  paddingLeft: "22px",
+  fontSize: "14px",
+  fontWeight: "800",
+  lineHeight: "1.8",
 };
 
 const errorStyle = {
   color: "red",
-  fontSize: "10px",
-  fontWeight: "700",
-  margin: "0 0 8px",
+  fontSize: "15px",
+  fontWeight: "800",
+  margin: "0 0 18px",
 };
 
 const uploadGroupStyle = {
-  marginBottom: "8px",
+  marginBottom: "26px",
 };
 
 const uploadLabelStyle = {
   display: "block",
-  fontSize: "9px",
+  fontSize: "16px",
   fontWeight: "900",
-  marginBottom: "2px",
+  marginBottom: "10px",
 };
 
 const uploadBoxStyle = {
-  height: "66px",
-  border: "1px dashed #000",
+  minHeight: "135px",
+  border: "2px dashed #000",
   background: "#F7F1E8",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
+  padding: "18px",
 };
 
 const uploadIconStyle = {
-  fontSize: "18px",
-  lineHeight: "16px",
+  fontSize: "34px",
+  lineHeight: "34px",
+  marginBottom: "8px",
 };
 
 const uploadTextStyle = {
-  margin: "2px 0 0",
-  fontSize: "8px",
+  margin: "0",
+  fontSize: "15px",
   fontWeight: "900",
 };
 
 const uploadSubTextStyle = {
-  margin: 0,
-  fontSize: "8px",
-  fontWeight: "900",
+  margin: "8px 0 0",
+  fontSize: "13px",
+  fontWeight: "800",
 };
 
 const uploadedFileBoxStyle = {
-  minHeight: "54px",
-  border: "1.5px solid #000",
+  minHeight: "95px",
+  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "8px 10px 7px",
+  padding: "18px 20px",
+  boxSizing: "border-box",
 };
 
 const fileTopRowStyle = {
@@ -580,40 +594,40 @@ const fileTopRowStyle = {
 const fileInfoStyle = {
   display: "flex",
   alignItems: "flex-start",
-  gap: "8px",
+  gap: "14px",
 };
 
 const fileIconStyle = {
-  fontSize: "13px",
-  lineHeight: "13px",
+  fontSize: "22px",
+  lineHeight: "22px",
   marginTop: "2px",
 };
 
 const fileNameStyle = {
   margin: 0,
-  fontSize: "8px",
+  fontSize: "14px",
   fontWeight: "900",
 };
 
 const fileSizeStyle = {
-  margin: "1px 0 0",
-  fontSize: "7px",
+  margin: "6px 0 0",
+  fontSize: "12px",
   fontWeight: "700",
 };
 
 const deleteButtonStyle = {
   border: "none",
   background: "transparent",
-  fontSize: "12px",
+  fontSize: "22px",
   cursor: "pointer",
   padding: 0,
 };
 
 const replaceButtonStyle = {
-  marginTop: "4px",
+  marginTop: "14px",
   border: "none",
   background: "transparent",
-  fontSize: "8px",
+  fontSize: "13px",
   fontWeight: "900",
   cursor: "pointer",
   padding: 0,
@@ -623,42 +637,42 @@ const buttonRowStyle = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginTop: "18px",
+  marginTop: "30px",
 };
 
 const rightButtonGroupStyle = {
   display: "flex",
-  gap: "12px",
+  gap: "28px",
 };
 
 const secondaryButtonStyle = {
-  width: "80px",
-  height: "30px",
+  width: "150px",
+  height: "50px",
   background: "#fff",
-  border: "1.5px solid #000",
-  fontSize: "9px",
-  fontWeight: "700",
+  border: "2px solid #000",
+  fontSize: "14px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const draftButtonStyle = {
-  width: "84px",
-  height: "30px",
+  width: "170px",
+  height: "50px",
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  fontSize: "8px",
-  fontWeight: "700",
+  fontSize: "13px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const primaryButtonStyle = {
-  width: "140px",
-  height: "30px",
+  width: "230px",
+  height: "50px",
   background: "#3B2E5A",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#fff",
-  fontSize: "8px",
-  fontWeight: "700",
+  fontSize: "13px",
+  fontWeight: "800",
   cursor: "pointer",
 };

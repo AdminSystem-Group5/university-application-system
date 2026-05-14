@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { subscribeToApplications } from "@/lib/services/applicationService";
+import { getApplications } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
@@ -28,35 +28,36 @@ export default function AdminPage() {
     if (isLoading) return;
 
     if (!firebaseUser) {
-      router.replace("/");
+      router.replace("/login");
       return;
     }
 
     if (!isUniversityAdmin) {
-      router.replace("/");
+      router.replace("/login");
     }
   }, [firebaseUser, isUniversityAdmin, isLoading, router]);
 
   useEffect(() => {
-  if (!firebaseUser || !isUniversityAdmin) return;
+    async function fetchData() {
+      try {
+        setLoadingData(true);
+        setErrorMessage("");
 
-  setLoadingData(true);
-  setErrorMessage("");
-
-  const unsubscribe = subscribeToApplications(
-    (data) => {
-      setApplications(Array.isArray(data) ? data : []);
-      setLoadingData(false);
-    },
-    () => {
-      setErrorMessage("Unable to load applications.");
-      setApplications([]);
-      setLoadingData(false);
+        const data = await getApplications();
+        setApplications(data);
+        setFilteredApplications(data);
+      } catch (error) {
+        console.error("Error loading applications:", error);
+        setErrorMessage("Unable to load applications.");
+      } finally {
+        setLoadingData(false);
+      }
     }
-  );
 
-  return () => unsubscribe();
-}, [firebaseUser, isUniversityAdmin]);
+    if (firebaseUser && isUniversityAdmin) {
+      fetchData();
+    }
+  }, [firebaseUser, isUniversityAdmin]);
 
   useEffect(() => {
     let filtered = [...applications];
@@ -67,7 +68,9 @@ export default function AdminPage() {
       filtered = filtered.filter((app) => {
         const studentName = String(app.studentName || "").toLowerCase();
         const studentEmail = String(app.studentEmail || "").toLowerCase();
-        const applicationId = String(app.applicationId || app.id || "").toLowerCase();
+        const applicationId = String(
+          app.applicationId || app.id || ""
+        ).toLowerCase();
 
         return (
           studentName.includes(searchValue) ||
@@ -108,7 +111,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await signOut();
-    router.replace("/");
+    router.replace("/login");
   };
 
   const handleReviewApplication = (applicationId) => {
@@ -131,6 +134,7 @@ export default function AdminPage() {
         <header style={headerStyle}>
           <div>
             <h1 style={logoStyle}>UAAMS</h1>
+
             <p style={subtitleStyle}>
               University Administration & Application
               <br />
@@ -139,21 +143,9 @@ export default function AdminPage() {
           </div>
 
           <nav style={navStyle}>
-            <button
-              type="button"
-              style={navButtonStyle}
-              onClick={() => router.push("/admin")}
-            >
-              DASHBOARD
-            </button>
+            
 
-            <button
-              type="button"
-              style={navButtonStyle}
-              onClick={() => router.push("/admin/applications")}
-            >
-              APPLICATIONS
-            </button>
+           
 
             <button
               type="button"
@@ -181,6 +173,7 @@ export default function AdminPage() {
           <div style={filterTopRowStyle}>
             <div style={searchWrapperStyle}>
               <span style={searchIconStyle}>⌕</span>
+
               <input
                 type="text"
                 value={search}
@@ -210,10 +203,14 @@ export default function AdminPage() {
           </p>
         </section>
 
-        {errorMessage && <p style={errorTextStyle}>{errorMessage}</p>}
+        {errorMessage && (
+          <p style={errorTextStyle}>{errorMessage}</p>
+        )}
 
         <section style={tableWrapperStyle}>
-          <div style={tableTitleBarStyle}>APPLICATIONS OVERVIEW</div>
+          <div style={tableTitleBarStyle}>
+            APPLICATIONS OVERVIEW
+          </div>
 
           <table style={tableStyle}>
             <thead>
@@ -237,7 +234,8 @@ export default function AdminPage() {
                 </tr>
               ) : (
                 filteredApplications.map((app, index) => {
-                  const applicationId = app.id || app.applicationId;
+                  const applicationId =
+                    app.id || app.applicationId;
 
                   return (
                     <tr key={applicationId || index}>
@@ -254,7 +252,9 @@ export default function AdminPage() {
                       </td>
 
                       <td style={tableCellStyle}>
-                        {app.intendedIntake || app.intake || "Date"}
+                        {app.intendedIntake ||
+                          app.intake ||
+                          "Date"}
                       </td>
 
                       <td style={tableCellStyle}>
@@ -262,14 +262,20 @@ export default function AdminPage() {
                       </td>
 
                       <td style={tableCellStyle}>
-                        {formatDate(app.createdAt || app.submittedAt)}
+                        {formatDate(
+                          app.createdAt || app.submittedAt
+                        )}
                       </td>
 
                       <td style={tableCellStyle}>
                         <button
                           type="button"
                           style={reviewButtonStyle}
-                          onClick={() => handleReviewApplication(applicationId)}
+                          onClick={() =>
+                            handleReviewApplication(
+                              applicationId
+                            )
+                          }
                         >
                           REVIEW
                         </button>
@@ -314,63 +320,71 @@ function formatDate(dateValue) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "0",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#071126",
 };
 
 const frameStyle = {
   minHeight: "100vh",
-  border: "1.5px solid #000",
+  width: "100%",
   background: "#F7F1E8",
+  padding: "24px 40px 50px",
+  boxSizing: "border-box",
 };
 
 const headerStyle = {
-  height: "58px",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "110px",
+  margin: "0 auto 30px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 80px",
+  padding: "0 60px",
+  border: "2px solid #000",
+  boxSizing: "border-box",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "26px",
+  fontSize: "48px",
   fontWeight: "900",
-  lineHeight: "24px",
+  lineHeight: "50px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "8px 0 0",
+  fontSize: "16px",
+  lineHeight: "22px",
 };
 
 const navStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "75px",
+  gap: "30px",
 };
 
 const navButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#071126",
-  height: "32px",
-  minWidth: "84px",
-  padding: "0 18px",
-  fontSize: "9px",
+  height: "55px",
+  minWidth: "170px",
+  padding: "0 25px",
+  fontSize: "16px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
 const welcomeBoxStyle = {
-  width: "780px",
-  height: "42px",
-  margin: "14px auto 10px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "90px",
+  margin: "0 auto 30px",
+  border: "2px solid #000",
   background: "#fff",
   display: "flex",
   alignItems: "center",
@@ -380,66 +394,71 @@ const welcomeBoxStyle = {
 
 const welcomeTitleStyle = {
   margin: 0,
-  fontSize: "14px",
+  fontSize: "34px",
   fontWeight: "900",
 };
 
 const statsRowStyle = {
-  width: "665px",
-  margin: "0 auto 18px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
   display: "grid",
   gridTemplateColumns: "repeat(5, 1fr)",
-  gap: "12px",
+  gap: "25px",
 };
 
 const statCardStyle = {
-  height: "56px",
-  border: "1.5px solid #000",
+  minHeight: "150px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "8px 10px",
+  padding: "28px",
   boxSizing: "border-box",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "center",
 };
 
 const statLabelStyle = {
   margin: 0,
-  fontSize: "9px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const statValueStyle = {
-  margin: "12px 0 0",
-  fontSize: "15px",
+  margin: "20px 0 0",
+  fontSize: "42px",
   fontWeight: "900",
 };
 
 const filtersBoxStyle = {
-  width: "665px",
-  margin: "0 auto 16px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "10px 22px 9px",
+  padding: "30px",
   boxSizing: "border-box",
 };
 
 const filterTopRowStyle = {
   display: "grid",
-  gridTemplateColumns: "1fr 90px",
-  gap: "22px",
+  gridTemplateColumns: "1fr 280px",
+  gap: "25px",
   alignItems: "center",
 };
 
 const searchWrapperStyle = {
-  height: "22px",
-  border: "1.5px solid #000",
+  height: "65px",
+  border: "2px solid #000",
   display: "flex",
   alignItems: "center",
   background: "#fff",
 };
 
 const searchIconStyle = {
-  width: "30px",
+  width: "70px",
   textAlign: "center",
-  fontSize: "12px",
+  fontSize: "24px",
   fontWeight: "900",
 };
 
@@ -448,93 +467,100 @@ const searchInputStyle = {
   border: "none",
   outline: "none",
   height: "100%",
-  fontSize: "8px",
-  fontWeight: "800",
+  fontSize: "18px",
+  fontWeight: "700",
+  paddingRight: "20px",
 };
 
 const statusSelectStyle = {
-  height: "24px",
+  height: "65px",
   background: "#3B2E5A",
   color: "#fff",
-  border: "1.5px solid #3B2E5A",
-  fontSize: "8px",
+  border: "2px solid #3B2E5A",
+  fontSize: "16px",
   fontWeight: "800",
-  padding: "0 6px",
+  padding: "0 15px",
   cursor: "pointer",
 };
 
 const resultsTextStyle = {
-  margin: "10px 0 0",
-  fontSize: "8px",
+  margin: "18px 0 0",
+  fontSize: "16px",
   fontWeight: "900",
 };
 
 const tableWrapperStyle = {
-  width: "665px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
+  overflowX: "auto",
 };
 
 const tableTitleBarStyle = {
-  height: "38px",
+  height: "76px",
   background: "#3B2E5A",
   color: "#fff",
   display: "flex",
   alignItems: "center",
-  paddingLeft: "22px",
-  fontSize: "13px",
+  paddingLeft: "34px",
+  fontSize: "26px",
   fontWeight: "900",
 };
 
 const tableStyle = {
   width: "100%",
+  minWidth: "1200px",
   borderCollapse: "collapse",
   background: "#fff",
 };
 
 const tableHeadStyle = {
-  borderTop: "1.5px solid #000",
-  borderBottom: "1.5px solid #000",
-  padding: "8px 6px",
+  borderTop: "2px solid #000",
+  borderBottom: "2px solid #000",
+  padding: "24px 18px",
   textAlign: "left",
-  fontSize: "8px",
+  fontSize: "16px",
   fontWeight: "900",
 };
 
 const tableCellStyle = {
-  borderBottom: "1.5px solid #000",
-  padding: "9px 6px",
-  fontSize: "8px",
+  borderBottom: "1px solid #ccc",
+  padding: "24px 18px",
+  fontSize: "16px",
   fontWeight: "500",
 };
 
 const reviewButtonStyle = {
-  background: "transparent",
+  background: "#3B2E5A",
+  color: "#fff",
   border: "none",
-  fontSize: "8px",
+  padding: "12px 22px",
+  fontSize: "15px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const emptyCellStyle = {
-  padding: "18px",
+  padding: "40px",
   textAlign: "center",
-  fontSize: "10px",
+  fontSize: "20px",
   fontWeight: "800",
 };
 
 const loadingTextStyle = {
   textAlign: "center",
-  marginTop: "80px",
-  fontSize: "16px",
+  marginTop: "120px",
+  fontSize: "32px",
   fontWeight: "800",
 };
 
 const errorTextStyle = {
-  width: "665px",
-  margin: "0 auto 12px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 20px",
   color: "red",
-  fontSize: "11px",
+  fontSize: "18px",
   fontWeight: "800",
 };

@@ -133,7 +133,13 @@ export default function StudentProfilePage() {
           </div>
 
           <nav style={topNavStyle}>
+            <button style={navButtonStyle} onClick={() => router.push("/partners")}>
+              PARTNERS
+            </button>
 
+            <button style={navButtonStyle} onClick={() => router.push("/about")}>
+              ABOUT US
+            </button>
 
             <button style={navButtonStyle} onClick={handleLogout}>
               LOGOUT
@@ -203,6 +209,36 @@ export default function StudentProfilePage() {
             </button>
           </section>
         </section>
+
+        <footer style={footerStyle}>
+          <div style={footerColumnStyle}>
+            <h3 style={footerTitleStyle}>NAVIGATION</h3>
+            <p style={footerTextStyle}>PARTNERS</p>
+            <p style={footerTextStyle}>ABOUT US</p>
+          </div>
+
+          <div style={footerCenterStyle}>
+            <h3 style={footerTitleStyle}>UAAMS</h3>
+            <p style={footerTextStyle}>
+              UNIVERSITY ADMINISTRATION & APPLICATION
+              <br />
+              MANAGEMENT SYSTEM
+            </p>
+            <p style={footerTextStyle}>FULL ADDRESS</p>
+            <p style={footerTextStyle}>EMAIL ADDRESS</p>
+            <p style={footerTextStyle}>FULL PHONE NUMBER</p>
+          </div>
+
+          <div style={footerColumnRightStyle}>
+            <h3 style={footerTitleStyle}>SUPPORT</h3>
+            <p style={footerTextStyle}>PRIVACY POLICY</p>
+            <p style={footerTextStyle}>TERMS & CONDITIONS</p>
+          </div>
+        </footer>
+
+        <div style={copyrightStyle}>
+          2026 UAAMS. ALL RIGHTS RESERVED.
+        </div>
       </div>
     </main>
   );
@@ -252,171 +288,183 @@ function formatDate(value) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "10px",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#071126",
+  boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  width: "100%",
+  border: "2px solid #000",
   background: "#F7F1E8",
+  display: "flex",
+  flexDirection: "column",
 };
 
 const headerStyle = {
-  height: "86px",
+  minHeight: "110px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 135px",
+  padding: "0 60px",
+  borderBottom: "2px solid #000",
+  boxSizing: "border-box",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "32px",
+  fontSize: "48px",
   fontWeight: "900",
-  lineHeight: "32px",
+  lineHeight: "48px",
 };
 
 const subtitleStyle = {
-  margin: "4px 0 0",
-  fontSize: "14px",
-  lineHeight: "18px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const topNavStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "76px",
+  gap: "30px",
 };
 
 const navButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  minWidth: "86px",
-  height: "36px",
-  padding: "0 18px",
-  fontSize: "12px",
+  minWidth: "150px",
+  height: "54px",
+  padding: "0 24px",
+  fontSize: "15px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const contentWrapperStyle = {
+  flex: 1,
+  width: "100%",
   background: "#F7F1E8",
-  padding: "16px 0 44px",
+  padding: "30px 40px 50px",
+  boxSizing: "border-box",
 };
 
 const mainPanelStyle = {
-  maxWidth: "900px",
-  minHeight: "585px",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "640px",
   margin: "0 auto",
   border: "2px solid #000",
   background: "#fff",
-  padding: "24px 26px",
+  padding: "34px 40px",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
+  boxSizing: "border-box",
 };
 
 const quickActionsStyle = {
   width: "100%",
   border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "10px 30px 34px",
+  padding: "24px 34px 36px",
   boxSizing: "border-box",
 };
 
 const quickActionsTitleStyle = {
-  margin: "0 0 16px",
-  fontSize: "13px",
-  fontWeight: "500",
+  margin: "0 0 20px",
+  fontSize: "18px",
+  fontWeight: "900",
 };
 
 const quickActionsButtonsStyle = {
-  display: "flex",
-  justifyContent: "center",
-  gap: "34px",
+  width: "100%",
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  gap: "30px",
 };
 
 const actionButtonStyle = {
-  width: "170px",
-  height: "28px",
+  height: "58px",
   background: "#fff",
   border: "2px solid #000",
   color: "#3B2E5A",
-  fontSize: "11px",
+  fontSize: "15px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const profileBoxStyle = {
-  width: "680px",
-  minHeight: "330px",
+  width: "100%",
+  minHeight: "390px",
   border: "2px solid #000",
   background: "#F7F1E8",
-  marginTop: "16px",
-  padding: "6px 26px 34px",
+  marginTop: "26px",
+  padding: "28px 40px 40px",
   boxSizing: "border-box",
 };
 
 const profileSectionStyle = {
-  marginBottom: "22px",
+  marginBottom: "34px",
 };
 
 const profileSectionTitleStyle = {
-  margin: "0 0 8px",
-  paddingBottom: "4px",
-  borderBottom: "1.5px solid #000",
-  fontSize: "14px",
+  margin: "0 0 18px",
+  paddingBottom: "10px",
+  borderBottom: "2px solid #000",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const profileRowsStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: "14px",
+  gap: "20px",
 };
 
 const profileRowStyle = {
   display: "grid",
-  gridTemplateColumns: "270px 1fr",
+  gridTemplateColumns: "360px 1fr",
   alignItems: "center",
 };
 
 const profileLabelStyle = {
   margin: 0,
-  fontSize: "11px",
-  fontWeight: "500",
+  fontSize: "15px",
+  fontWeight: "800",
 };
 
 const profileValueStyle = {
   margin: 0,
-  fontSize: "11px",
-  fontWeight: "500",
+  fontSize: "15px",
+  fontWeight: "600",
 };
 
 const backDashboardButtonStyle = {
   marginTop: "36px",
-  width: "170px",
-  height: "30px",
+  width: "240px",
+  height: "52px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "11px",
+  fontSize: "15px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const footerStyle = {
-  minHeight: "120px",
+  minHeight: "160px",
   background: "#fff",
-  borderTop: "1px solid rgba(0,0,0,0.2)",
+  borderTop: "2px solid #000",
   display: "grid",
   gridTemplateColumns: "1fr 1fr 1fr",
-  padding: "12px 135px 8px",
+  padding: "28px 60px 22px",
   boxSizing: "border-box",
 };
 
@@ -433,25 +481,25 @@ const footerColumnRightStyle = {
 };
 
 const footerTitleStyle = {
-  margin: "0 0 10px",
-  fontSize: "16px",
+  margin: "0 0 14px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const footerTextStyle = {
-  margin: "0 0 7px",
-  fontSize: "10px",
-  lineHeight: "10px",
+  margin: "0 0 8px",
+  fontSize: "13px",
+  lineHeight: "18px",
 };
 
 const copyrightStyle = {
-  height: "30px",
+  height: "42px",
   borderTop: "1px solid #000",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "10px",
+  fontSize: "12px",
 };
 
 const loadingBoxStyle = {
@@ -461,22 +509,22 @@ const loadingBoxStyle = {
   alignItems: "center",
   justifyContent: "center",
   gap: "16px",
-  fontSize: "16px",
-  fontWeight: "700",
+  fontSize: "22px",
+  fontWeight: "800",
 };
 
 const errorTextStyle = {
   color: "red",
-  fontSize: "14px",
-  fontWeight: "700",
+  fontSize: "16px",
+  fontWeight: "800",
 };
 
 const purpleButtonStyle = {
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  padding: "10px 22px",
-  fontSize: "11px",
+  padding: "14px 28px",
+  fontSize: "14px",
   fontWeight: "800",
   cursor: "pointer",
 };

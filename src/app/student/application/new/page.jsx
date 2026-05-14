@@ -4,14 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   getDocs,
   query,
-  serverTimestamp,
-  updateDoc,
   where,
 } from "firebase/firestore";
 
@@ -24,7 +21,6 @@ const DOCUMENTS_STORAGE_KEY = "uaams_new_application_documents";
 const LEGACY_DOCUMENTS_STORAGE_KEY = "studentApplicationDocuments";
 const REVIEW_STORAGE_KEY = "uaams_new_application_review";
 const CURRENT_STEP_STORAGE_KEY = "uaams_application_current_step";
-const DRAFT_APPLICATION_ID_STORAGE_KEY = "uaams_draft_application_id";
 
 const DEFAULT_FORM_DATA = {
   fullName: "",
@@ -57,10 +53,6 @@ export default function NewApplicationPage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   const [formData, setFormData] = useState({ ...DEFAULT_FORM_DATA });
-
-  const [currentUser, setCurrentUser] = useState(null);
-  const [currentStudent, setCurrentStudent] = useState(null);
-  const [savingDraft, setSavingDraft] = useState(false);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -96,9 +88,6 @@ export default function NewApplicationPage() {
           router.replace("/admin");
           return;
         }
-
-        setCurrentUser(firebaseUser);
-        setCurrentStudent(userData);
 
         const savedFormData = shouldResetApplication
           ? {}
@@ -230,80 +219,9 @@ export default function NewApplicationPage() {
     }));
   };
 
-  const handleSaveDraft = async () => {
-    if (!currentUser) {
-      setErrorMessage("You must be logged in to save a draft.");
-      return;
-    }
-
-    try {
-      setSavingDraft(true);
-      setErrorMessage("");
-
-      saveApplicationForm(formData, "form");
-
-      const db = getFirestoreDb();
-
-      const draftPayload = buildDraftApplicationPayload(
-        formData,
-        currentUser,
-        currentStudent
-      );
-
-      const existingDraftId =
-        typeof window !== "undefined"
-          ? localStorage.getItem(DRAFT_APPLICATION_ID_STORAGE_KEY)
-          : null;
-
-      let draftId = existingDraftId;
-
-      if (existingDraftId) {
-        const existingDraftRef = doc(db, "applications", existingDraftId);
-        const existingDraftSnap = await getDoc(existingDraftRef);
-
-        const existingDraftData = existingDraftSnap.exists()
-          ? existingDraftSnap.data()
-          : null;
-
-        const isExistingDraft =
-          existingDraftSnap.exists() &&
-          existingDraftData?.studentUid === currentUser.uid &&
-          existingDraftData?.applicationStatus === "Draft";
-
-        if (isExistingDraft) {
-          await updateDoc(existingDraftRef, draftPayload);
-        } else {
-          const newDraftRef = await addDoc(collection(db, "applications"), {
-            ...draftPayload,
-            applicationId: generateApplicationReference(),
-            createdAt: serverTimestamp(),
-          });
-
-          draftId = newDraftRef.id;
-        }
-      } else {
-        const newDraftRef = await addDoc(collection(db, "applications"), {
-          ...draftPayload,
-          applicationId: generateApplicationReference(),
-          createdAt: serverTimestamp(),
-        });
-
-        draftId = newDraftRef.id;
-      }
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem(DRAFT_APPLICATION_ID_STORAGE_KEY, draftId);
-        sessionStorage.setItem(DRAFT_APPLICATION_ID_STORAGE_KEY, draftId);
-      }
-
-      alert("Application saved as draft.");
-      router.push("/student");
-    } catch (error) {
-      console.error("Save draft error:", error);
-      setErrorMessage("Unable to save draft. Please try again.");
-    } finally {
-      setSavingDraft(false);
-    }
+  const handleSaveDraft = () => {
+    saveApplicationForm(formData, "form");
+    alert("Application saved as draft.");
   };
 
   const handleContinue = (e) => {
@@ -349,7 +267,7 @@ export default function NewApplicationPage() {
     );
   }
 
-  if (errorMessage && !currentUser) {
+  if (errorMessage) {
     return (
       <main style={pageStyle}>
         <div style={frameStyle}>
@@ -408,8 +326,6 @@ export default function NewApplicationPage() {
         </section>
 
         <form style={formBoxStyle} onSubmit={handleContinue}>
-          {errorMessage && <p style={errorTextStyle}>{errorMessage}</p>}
-
           <FormSection title="A. PERSONAL INFORMATION">
             <div style={twoColumnStyle}>
               <InputField
@@ -561,14 +477,9 @@ export default function NewApplicationPage() {
               <button
                 type="button"
                 onClick={handleSaveDraft}
-                disabled={savingDraft}
-                style={{
-                  ...draftButton,
-                  opacity: savingDraft ? 0.6 : 1,
-                  cursor: savingDraft ? "not-allowed" : "pointer",
-                }}
+                style={draftButton}
               >
-                {savingDraft ? "SAVING..." : "SAVE AS DRAFT"}
+                SAVE AS DRAFT
               </button>
 
               <button type="submit" style={continueButton}>
@@ -602,7 +513,6 @@ function clearNewApplicationStorage() {
   sessionStorage.removeItem(DOCUMENTS_STORAGE_KEY);
   sessionStorage.removeItem(REVIEW_STORAGE_KEY);
   sessionStorage.removeItem(CURRENT_STEP_STORAGE_KEY);
-  sessionStorage.removeItem(DRAFT_APPLICATION_ID_STORAGE_KEY);
 
   localStorage.removeItem(FORM_STORAGE_KEY);
   localStorage.removeItem(LEGACY_FORM_STORAGE_KEY);
@@ -610,7 +520,6 @@ function clearNewApplicationStorage() {
   localStorage.removeItem(LEGACY_DOCUMENTS_STORAGE_KEY);
   localStorage.removeItem(REVIEW_STORAGE_KEY);
   localStorage.removeItem(CURRENT_STEP_STORAGE_KEY);
-  localStorage.removeItem(DRAFT_APPLICATION_ID_STORAGE_KEY);
 }
 
 function saveApplicationForm(data, nextStep = "form") {
@@ -649,57 +558,6 @@ function loadSavedApplicationForm() {
     console.error("Saved form data could not be parsed:", error);
     return {};
   }
-}
-
-function buildDraftApplicationPayload(data, firebaseUser, studentData) {
-  const studentName =
-    data.fullName ||
-    studentData?.displayName ||
-    studentData?.fullName ||
-    firebaseUser?.displayName ||
-    "Student";
-
-  const studentEmail = studentData?.email || firebaseUser?.email || "";
-
-  return {
-    fullName: data.fullName || studentName,
-    studentName,
-    studentEmail,
-    email: studentEmail,
-
-    studentId: firebaseUser.uid,
-    studentUid: firebaseUser.uid,
-    userId: firebaseUser.uid,
-    createdBy: firebaseUser.uid,
-
-    dateOfBirth: data.dateOfBirth || "",
-    nationality: data.nationality || "",
-    passportNumber: data.passportNumber || "",
-
-    highestQualification: data.highestQualification || "",
-    institutionName: data.institutionName || "",
-    graduationYear: data.graduationYear || "",
-    gpaGrade: data.gpaGrade || "",
-
-    selectedUniversityId: data.selectedUniversityId || "",
-    selectedUniversity: data.selectedUniversity || "",
-    selectedCourseId: data.selectedCourseId || "",
-    courseName: data.courseName || "",
-    intendedIntake: data.intendedIntake || "",
-
-    applicationStatus: "Draft",
-    status: "Draft",
-    pendingDecision: "Draft",
-    isDraft: true,
-
-    submittedAt: null,
-    updatedAt: serverTimestamp(),
-  };
-}
-
-function generateApplicationReference() {
-  const randomNumber = Math.floor(1000 + Math.random() * 9000);
-  return `APP-${randomNumber}`;
 }
 
 async function fetchUniversities(db) {
@@ -822,11 +680,7 @@ function SelectField({
       >
         {options.map((option, index) => {
           const optionValue =
-            typeof option === "string"
-              ? index === 0
-                ? ""
-                : option
-              : option.value;
+            typeof option === "string" ? (index === 0 ? "" : option) : option.value;
 
           const optionLabel =
             typeof option === "string" ? option : option.label;
@@ -851,72 +705,78 @@ function SelectField({
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "10px",
   fontFamily: "Arial, Helvetica, sans-serif",
+  boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  width: "100%",
+  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "0 130px 50px",
+  padding: "0 40px 60px",
+  boxSizing: "border-box",
 };
 
 const headerStyle = {
-  height: "70px",
+  minHeight: "110px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 28px",
-  margin: "0 -130px 0",
-  borderBottom: "1px solid rgba(0,0,0,0.12)",
+  padding: "0 60px",
+  margin: "0 -40px 30px",
+  borderBottom: "2px solid #000",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "24px",
-  fontWeight: "800",
-  lineHeight: "24px",
+  fontSize: "48px",
+  fontWeight: "900",
+  lineHeight: "48px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const logoutButton = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  padding: "8px 26px",
-  fontSize: "11px",
+  padding: "14px 36px",
+  fontSize: "16px",
   fontWeight: "700",
   cursor: "pointer",
 };
 
 const titleBarStyle = {
-  maxWidth: "900px",
-  margin: "0 auto 20px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "90px",
+  margin: "0 auto 30px",
+  border: "2px solid #000",
   background: "#fff",
-  height: "50px",
   display: "grid",
-  gridTemplateColumns: "220px 1fr 220px",
+  gridTemplateColumns: "300px 1fr 300px",
   alignItems: "center",
+  boxSizing: "border-box",
 };
 
 const backButton = {
-  marginLeft: "52px",
+  marginLeft: "30px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  height: "28px",
-  width: "160px",
-  fontSize: "10px",
-  fontWeight: "700",
+  height: "48px",
+  width: "220px",
+  fontSize: "14px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
@@ -926,73 +786,77 @@ const titleCenterStyle = {
 
 const pageTitleStyle = {
   margin: 0,
-  fontSize: "17px",
-  fontWeight: "800",
+  fontSize: "30px",
+  fontWeight: "900",
 };
 
 const pageSubtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "9px",
-  fontWeight: "700",
+  margin: "8px 0 0",
+  fontSize: "13px",
+  fontWeight: "800",
 };
 
 const stepsStyle = {
-  maxWidth: "900px",
-  margin: "0 auto 18px",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 30px",
   display: "grid",
-  gridTemplateColumns: "1fr 80px 1fr 80px 1fr",
+  gridTemplateColumns: "1fr 120px 1fr 120px 1fr",
   alignItems: "center",
-  columnGap: "18px",
+  columnGap: "24px",
 };
 
 const activeStepStyle = {
-  fontSize: "10px",
-  fontWeight: "800",
-  borderTop: "1px solid #000",
-  paddingTop: "6px",
+  fontSize: "15px",
+  fontWeight: "900",
+  borderTop: "2px solid #000",
+  paddingTop: "12px",
 };
 
 const stepStyle = {
-  fontSize: "10px",
-  fontWeight: "500",
-  borderTop: "1px dotted #000",
-  paddingTop: "6px",
+  fontSize: "15px",
+  fontWeight: "700",
+  borderTop: "2px dotted #000",
+  paddingTop: "12px",
   textAlign: "center",
 };
 
 const stepLineStyle = {
-  borderTop: "1px dotted #000",
+  borderTop: "2px dotted #000",
 };
 
 const formBoxStyle = {
-  maxWidth: "900px",
+  width: "100%",
+  maxWidth: "1700px",
   margin: "0 auto",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "22px 54px 16px",
+  padding: "38px 60px 34px",
+  boxSizing: "border-box",
 };
 
 const formSectionStyle = {
-  borderBottom: "1px solid #000",
-  paddingBottom: "18px",
-  marginBottom: "18px",
+  borderBottom: "2px solid #000",
+  paddingBottom: "34px",
+  marginBottom: "34px",
 };
 
 const sectionTitleStyle = {
-  margin: "0 0 14px",
-  fontSize: "12px",
-  fontWeight: "800",
+  margin: "0 0 26px",
+  fontSize: "20px",
+  fontWeight: "900",
 };
 
 const twoColumnStyle = {
   display: "grid",
   gridTemplateColumns: "1fr 1fr",
-  columnGap: "150px",
-  rowGap: "16px",
+  columnGap: "90px",
+  rowGap: "28px",
 };
 
 const fullWidthFieldStyle = {
-  marginTop: "16px",
+  marginTop: "28px",
+  maxWidth: "calc(50% - 45px)",
 };
 
 const fieldWrapperStyle = {
@@ -1001,66 +865,67 @@ const fieldWrapperStyle = {
 };
 
 const labelStyle = {
-  fontSize: "9px",
-  fontWeight: "800",
-  marginBottom: "5px",
+  fontSize: "14px",
+  fontWeight: "900",
+  marginBottom: "10px",
 };
 
 const inputStyle = {
-  height: "32px",
-  border: "1.5px solid #3B2E5A",
+  height: "54px",
+  border: "2px solid #3B2E5A",
   background: "#fff",
-  padding: "0 10px",
-  fontSize: "10px",
+  padding: "0 16px",
+  fontSize: "15px",
   outline: "none",
 };
 
 const errorTextStyle = {
-  margin: "6px 0 12px",
+  margin: "10px 0 0",
   color: "red",
-  fontSize: "10px",
-  fontWeight: "700",
+  fontSize: "14px",
+  fontWeight: "800",
 };
 
 const buttonRowStyle = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
-  marginTop: "10px",
+  marginTop: "28px",
 };
 
 const rightButtonsStyle = {
   display: "flex",
-  gap: "24px",
+  gap: "28px",
 };
 
 const cancelButton = {
   background: "#fff",
-  border: "1.5px solid #000",
-  height: "34px",
-  width: "88px",
-  fontSize: "10px",
-  fontWeight: "700",
+  border: "2px solid #000",
+  height: "52px",
+  width: "150px",
+  fontSize: "14px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const draftButton = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  height: "34px",
-  width: "90px",
-  fontSize: "9px",
-  fontWeight: "700",
+  height: "52px",
+  width: "170px",
+  fontSize: "13px",
+  fontWeight: "800",
+  cursor: "pointer",
 };
 
 const continueButton = {
   background: "#3B2E5A",
   color: "#fff",
-  border: "1.5px solid #3B2E5A",
-  height: "34px",
-  width: "150px",
-  fontSize: "9px",
-  fontWeight: "700",
+  border: "2px solid #3B2E5A",
+  height: "52px",
+  width: "260px",
+  fontSize: "13px",
+  fontWeight: "800",
   cursor: "pointer",
 };

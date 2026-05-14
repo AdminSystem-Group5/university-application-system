@@ -478,77 +478,86 @@ function getFirestoreDateTime(value) {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "10px",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#071126",
+  boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  width: "100%",
+  border: "2px solid #000",
   background: "#F7F1E8",
+  display: "flex",
+  flexDirection: "column",
 };
 
 const headerStyle = {
-  height: "86px",
+  minHeight: "110px",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 135px",
+  padding: "0 60px",
+  borderBottom: "2px solid #000",
+  boxSizing: "border-box",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "32px",
+  fontSize: "48px",
   fontWeight: "900",
-  lineHeight: "32px",
+  lineHeight: "48px",
 };
 
 const subtitleStyle = {
-  margin: "4px 0 0",
-  fontSize: "14px",
-  lineHeight: "18px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const topNavStyle = {
   display: "flex",
   alignItems: "center",
-  gap: "0",
+  gap: "30px",
 };
 
 const navButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  minWidth: "86px",
-  height: "36px",
-  padding: "0 18px",
-  fontSize: "12px",
+  minWidth: "150px",
+  height: "54px",
+  padding: "0 24px",
+  fontSize: "15px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const titleBarStyle = {
-  maxWidth: "1000px",
-  height: "46px",
-  margin: "16px auto 18px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  minHeight: "80px",
+  margin: "30px auto 30px",
+  border: "2px solid #000",
   display: "grid",
-  gridTemplateColumns: "220px 1fr 220px",
+  gridTemplateColumns: "260px 1fr 260px",
   alignItems: "center",
-  background: "#F7F1E8",
+  background: "#fff",
+  boxSizing: "border-box",
 };
 
 const backDashboardButtonStyle = {
-  marginLeft: "24px",
-  width: "150px",
-  height: "28px",
+  marginLeft: "30px",
+  width: "200px",
+  height: "46px",
   background: "#3B2E5A",
   color: "#fff",
   border: "none",
-  fontSize: "10px",
+  fontSize: "13px",
   fontWeight: "800",
   cursor: "pointer",
 };
@@ -559,92 +568,94 @@ const titleTextWrapperStyle = {
 
 const pageTitleStyle = {
   margin: 0,
-  fontSize: "18px",
+  fontSize: "28px",
   fontWeight: "900",
 };
 
 const pageSubtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "8px",
+  margin: "6px 0 0",
+  fontSize: "13px",
   fontWeight: "800",
 };
 
 const documentsBoxStyle = {
-  maxWidth: "1000px",
-  margin: "0 auto 40px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 50px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "24px 70px 16px",
+  padding: "34px 60px 32px",
   boxSizing: "border-box",
 };
 
 const requirementsBoxStyle = {
   background: "#F7F1E8",
-  padding: "14px 22px",
-  marginBottom: "14px",
+  border: "2px solid #000",
+  padding: "24px 30px",
+  marginBottom: "28px",
 };
 
 const requirementsTitleStyle = {
-  margin: "0 0 6px",
-  fontSize: "12px",
+  margin: "0 0 10px",
+  fontSize: "18px",
   fontWeight: "900",
 };
 
 const requirementsTextStyle = {
-  margin: "0 0 2px",
-  fontSize: "10px",
+  margin: "0 0 6px",
+  fontSize: "14px",
   fontWeight: "800",
 };
 
 const documentGroupStyle = {
-  marginBottom: "12px",
+  marginBottom: "24px",
 };
 
 const documentLabelStyle = {
-  margin: "0 0 6px",
-  fontSize: "11px",
+  margin: "0 0 10px",
+  fontSize: "16px",
   fontWeight: "900",
 };
 
 const dropZoneStyle = {
-  minHeight: "68px",
-  border: "1.5px dashed #000",
+  minHeight: "135px",
+  border: "2px dashed #000",
   background: "#F7F1E8",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  padding: "10px",
+  padding: "18px",
 };
 
 const uploadIconStyle = {
-  fontSize: "16px",
+  fontSize: "34px",
   fontWeight: "900",
-  marginBottom: "4px",
+  marginBottom: "8px",
 };
 
 const dropTextStyle = {
   margin: 0,
-  fontSize: "9px",
+  fontSize: "15px",
   fontWeight: "900",
 };
 
 const dropHelpTextStyle = {
-  margin: "2px 0 0",
-  fontSize: "9px",
+  margin: "8px 0 0",
+  fontSize: "13px",
   fontWeight: "800",
 };
 
 const uploadedFileStyle = {
-  marginTop: "8px",
+  marginTop: "14px",
   width: "100%",
-  maxWidth: "620px",
+  maxWidth: "900px",
   display: "grid",
-  gridTemplateColumns: "1fr 90px 90px",
+  gridTemplateColumns: "1fr 120px 120px",
   alignItems: "center",
-  gap: "10px",
-  fontSize: "9px",
+  gap: "14px",
+  fontSize: "13px",
   fontWeight: "800",
 };
 
@@ -654,48 +665,48 @@ const uploadedStatusStyle = {
 };
 
 const uploadErrorStyle = {
-  margin: "4px 0 0",
+  margin: "8px 0 0",
   color: "red",
-  fontSize: "10px",
+  fontSize: "13px",
   fontWeight: "800",
 };
 
 const errorTextStyle = {
   color: "red",
-  fontSize: "11px",
+  fontSize: "15px",
   fontWeight: "800",
 };
 
 const successTextStyle = {
   color: "green",
-  fontSize: "11px",
+  fontSize: "15px",
   fontWeight: "800",
 };
 
 const buttonRowStyle = {
-  marginTop: "18px",
+  marginTop: "28px",
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
 };
 
 const secondaryButtonStyle = {
-  width: "86px",
-  height: "32px",
+  width: "150px",
+  height: "50px",
   background: "#fff",
-  border: "1.5px solid #000",
-  fontSize: "9px",
+  border: "2px solid #000",
+  fontSize: "14px",
   fontWeight: "800",
   cursor: "pointer",
 };
 
 const primaryButtonStyle = {
-  width: "160px",
-  height: "32px",
+  width: "230px",
+  height: "50px",
   background: "#3B2E5A",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#fff",
-  fontSize: "9px",
+  fontSize: "14px",
   fontWeight: "800",
 };
 
@@ -704,6 +715,6 @@ const loadingBoxStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "16px",
-  fontWeight: "800",
+  fontSize: "24px",
+  fontWeight: "900",
 };
