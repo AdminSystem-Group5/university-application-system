@@ -133,14 +133,7 @@ export default function StudentProfilePage() {
           </div>
 
           <nav style={topNavStyle}>
-            <button style={navButtonStyle} onClick={() => router.push("/partners")}>
-              PARTNERS
-            </button>
-
-            <button style={navButtonStyle} onClick={() => router.push("/about")}>
-              ABOUT US
-            </button>
-
+           
             <button style={navButtonStyle} onClick={handleLogout}>
               LOGOUT
             </button>
@@ -210,35 +203,8 @@ export default function StudentProfilePage() {
           </section>
         </section>
 
-        <footer style={footerStyle}>
-          <div style={footerColumnStyle}>
-            <h3 style={footerTitleStyle}>NAVIGATION</h3>
-            <p style={footerTextStyle}>PARTNERS</p>
-            <p style={footerTextStyle}>ABOUT US</p>
-          </div>
+       
 
-          <div style={footerCenterStyle}>
-            <h3 style={footerTitleStyle}>UAAMS</h3>
-            <p style={footerTextStyle}>
-              UNIVERSITY ADMINISTRATION & APPLICATION
-              <br />
-              MANAGEMENT SYSTEM
-            </p>
-            <p style={footerTextStyle}>FULL ADDRESS</p>
-            <p style={footerTextStyle}>EMAIL ADDRESS</p>
-            <p style={footerTextStyle}>FULL PHONE NUMBER</p>
-          </div>
-
-          <div style={footerColumnRightStyle}>
-            <h3 style={footerTitleStyle}>SUPPORT</h3>
-            <p style={footerTextStyle}>PRIVACY POLICY</p>
-            <p style={footerTextStyle}>TERMS & CONDITIONS</p>
-          </div>
-        </footer>
-
-        <div style={copyrightStyle}>
-          2026 UAAMS. ALL RIGHTS RESERVED.
-        </div>
       </div>
     </main>
   );
@@ -299,21 +265,25 @@ const pageStyle = {
 const frameStyle = {
   minHeight: "calc(100vh - 20px)",
   width: "100%",
-  border: "2px solid #000",
+
   background: "#F7F1E8",
   display: "flex",
   flexDirection: "column",
 };
 
 const headerStyle = {
-  minHeight: "110px",
+  height: "95px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 60px",
+  padding: "0 45px",
+  margin: "0 0 24px",
   borderBottom: "2px solid #000",
-  boxSizing: "border-box",
 };
 
 const logoStyle = {

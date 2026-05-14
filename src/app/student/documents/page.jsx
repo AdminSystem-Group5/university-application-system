@@ -220,21 +220,7 @@ export default function StudentDocumentsPage() {
           </div>
 
           <nav style={topNavStyle}>
-            <button
-              type="button"
-              style={navButtonStyle}
-              onClick={() => router.push("/partners")}
-            >
-              PARTNERS
-            </button>
-
-            <button
-              type="button"
-              style={navButtonStyle}
-              onClick={() => router.push("/about")}
-            >
-              ABOUT US
-            </button>
+            
 
             <button type="button" style={navButtonStyle} onClick={handleLogout}>
               LOGOUT
@@ -489,21 +475,25 @@ const pageStyle = {
 const frameStyle = {
   minHeight: "calc(100vh - 20px)",
   width: "100%",
-  border: "2px solid #000",
+
   background: "#F7F1E8",
   display: "flex",
   flexDirection: "column",
 };
 
 const headerStyle = {
-  minHeight: "110px",
+ height: "95px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 60px",
+  padding: "0 45px",
+  margin: "0 0 24px",
   borderBottom: "2px solid #000",
-  boxSizing: "border-box",
 };
 
 const logoStyle = {

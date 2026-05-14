@@ -360,25 +360,27 @@ const pageStyle = {
 };
 
 const frameStyle = {
-  minHeight: "100vh",
+  minHeight: "calc(100vh - 20px)",
   width: "100%",
+
   background: "#F7F1E8",
-  padding: "24px 40px 50px",
+  padding: "0 40px 50px",
   boxSizing: "border-box",
 };
 
 const headerStyle = {
-  width: "100%",
-  maxWidth: "1700px",
-  minHeight: "110px",
-  margin: "0 auto 30px",
+  height: "95px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 60px",
-  border: "2px solid #000",
-  boxSizing: "border-box",
+  padding: "0 45px",
+  margin: "0 0 24px",
+  borderBottom: "2px solid #000",
 };
 
 const logoStyle = {

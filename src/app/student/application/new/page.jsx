@@ -715,20 +715,24 @@ const pageStyle = {
 const frameStyle = {
   minHeight: "calc(100vh - 20px)",
   width: "100%",
-  border: "2px solid #000",
+
   background: "#F7F1E8",
   padding: "0 40px 60px",
   boxSizing: "border-box",
 };
 
 const headerStyle = {
-  minHeight: "110px",
+  height: "95px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 60px",
-  margin: "0 -40px 30px",
+  padding: "0 45px",
+  margin: "0 0 24px",
   borderBottom: "2px solid #000",
 };
 

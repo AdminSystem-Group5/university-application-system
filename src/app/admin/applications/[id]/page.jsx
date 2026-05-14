@@ -528,33 +528,35 @@ function decisionRadioLabelStyle(status, selected) {
 }
 
 const pageStyle = {
-  minHeight: "100vh",
-  width: "100vw",
-  maxWidth: "100vw",
-  overflowX: "hidden",
+ minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "20px",
   fontFamily: "Arial, Helvetica, sans-serif",
   color: "#071126",
 };
 
 const frameStyle = {
+  minHeight: "calc(100vh - 20px)",
   width: "100%",
-  minHeight: "calc(100vh - 40px)",
-  border: "2px solid #000",
+
   background: "#F7F1E8",
+  padding: "0 40px 50px",
+  boxSizing: "border-box",
 };
 
 const headerStyle = {
-  minHeight: "120px",
+  height: "95px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 60px",
-  borderBottom: "2px solid rgba(0,0,0,0.15)",
-  flexWrap: "wrap",
-  gap: "20px",
+  padding: "0 45px",
+  margin: "0 0 24px",
+  borderBottom: "2px solid #000",
 };
 
 const logoStyle = {

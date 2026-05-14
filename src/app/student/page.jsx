@@ -231,13 +231,7 @@ export default function StudentPage() {
               START NEW APPLICATION
             </button>
 
-            <button
-              type="button"
-              style={actionButton}
-              onClick={handleViewAllApplications}
-            >
-              VIEW ALL APPLICATIONS
-            </button>
+          
 
             <button type="button" style={actionButton} onClick={handleProfile}>
               PROFILE
@@ -643,7 +637,7 @@ const sectionTitleStyle = {
 
 const quickButtonRow = {
   display: "grid",
-  gridTemplateColumns: "repeat(4, 1fr)",
+  gridTemplateColumns: "repeat(3, 1fr)",
   gap: "30px",
 };
 
