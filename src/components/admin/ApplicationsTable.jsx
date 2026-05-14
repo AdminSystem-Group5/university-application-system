@@ -3,10 +3,8 @@
 import Link from "next/link";
 
 const STATUSES = [
-  "Submitted",
   "Under Review",
-  "More Info Required",
-  "Approved",
+  "Offered",
   "Rejected",
 ];
 
@@ -16,9 +14,7 @@ function getStatusBadgeClass(status) {
       return "bg-slate-100 text-slate-700";
     case "Under Review":
       return "bg-blue-100 text-blue-700";
-    case "More Info Required":
-      return "bg-amber-100 text-amber-800";
-    case "Approved":
+    case "Offered":
       return "bg-green-100 text-green-700";
     case "Rejected":
       return "bg-red-100 text-red-700";

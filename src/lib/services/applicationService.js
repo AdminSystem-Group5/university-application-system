@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
   serverTimestamp,
@@ -30,18 +31,27 @@ export async function getApplicationById(id) {
   };
 }
 
-export async function getApplications() {
+export function subscribeToApplications(onApplicationsChange, onError) {
   const db = getFirestoreDb();
   const applicationsRef = collection(db, "applications");
   const q = query(applicationsRef, orderBy("submittedAt", "desc"));
-  const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnap) => ({
-    id: docSnap.id,
-    ...docSnap.data(),
-  }));
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const applications = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+
+      onApplicationsChange(applications);
+    },
+    (error) => {
+      console.error("Error listening to applications:", error);
+      onError?.(error);
+    }
+  );
 }
-
 export async function updateApplicationStatus(
   id,
   newStatus,

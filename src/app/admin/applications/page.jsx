@@ -1,19 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminStatsCards from "@/components/admin/AdminStatsCards";
 import AdminFilters from "@/components/admin/AdminFilters";
 import ApplicationsTable from "@/components/admin/ApplicationsTable";
 import {
-  getApplications,
+  subscribeToApplications,
   updateApplicationStatus,
 } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
   const router = useRouter();
-  const hasFetchedRef = useRef(false);
 
   const {
     firebaseUser,
@@ -33,21 +32,6 @@ export default function AdminPage() {
   const [messageType, setMessageType] = useState("success");
   const [pageLoading, setPageLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setPageLoading(true);
-      setMessage("");
-
-      const data = await getApplications();
-      setApplications(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Error loading applications:", error);
-      setMessage("Failed to load applications.");
-      setMessageType("error");
-    } finally {
-      setPageLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (!message) return;
@@ -59,25 +43,36 @@ export default function AdminPage() {
     return () => clearTimeout(timer);
   }, [message]);
 
-  useEffect(() => {
-    if (isLoading) return;
+useEffect(() => {
+  if (isLoading) return;
 
-    if (!firebaseUser) {
-      router.replace("/login");
-      return;
+  if (!firebaseUser) {
+    router.replace("/login");
+    return;
+  }
+
+  if (!isUniversityAdmin) {
+    alert("Access denied. Admins only.");
+    router.replace("/login");
+    return;
+  }
+
+  setPageLoading(true);
+
+  const unsubscribe = subscribeToApplications(
+    (data) => {
+      setApplications(Array.isArray(data) ? data : []);
+      setPageLoading(false);
+    },
+    () => {
+      setMessage("Failed to load applications.");
+      setMessageType("error");
+      setPageLoading(false);
     }
+  );
 
-    if (!isUniversityAdmin) {
-      alert("Access denied. Admins only.");
-      router.replace("/login");
-      return;
-    }
-
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-
-    fetchData();
-  }, [isLoading, firebaseUser, isUniversityAdmin, router, fetchData]);
+  return () => unsubscribe();
+}, [isLoading, firebaseUser, isUniversityAdmin, router]);
 
   const filteredApplications = useMemo(() => {
     let filtered = [...applications];
