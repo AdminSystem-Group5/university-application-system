@@ -380,7 +380,7 @@ export default function RegisterPage() {
     color: "#21132f",
     fontWeight: "700",
     cursor: "pointer",
-    marginBottom: "26px",
+    
   }}
 >
   ← BACK TO HOME
