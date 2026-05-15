@@ -2,20 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  subscribeToApplications,
-} from "@/lib/services/applicationService";
+import { subscribeToApplications } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
 
 export default function AdminPage() {
   const router = useRouter();
 
-  const {
-    firebaseUser,
-    isUniversityAdmin,
-    isLoading,
-    signOut,
-  } = useAuth();
+  const { firebaseUser, isUniversityAdmin, isLoading, signOut } = useAuth();
 
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
@@ -25,9 +18,10 @@ export default function AdminPage() {
 
   const [loadingData, setLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || loggingOut) return;
 
     if (!firebaseUser) {
       router.replace("/login");
@@ -37,7 +31,7 @@ export default function AdminPage() {
     if (!isUniversityAdmin) {
       router.replace("/login");
     }
-  }, [firebaseUser, isUniversityAdmin, isLoading, router]);
+  }, [firebaseUser, isUniversityAdmin, isLoading, loggingOut, router]);
 
   useEffect(() => {
     if (!firebaseUser || !isUniversityAdmin) return;
@@ -140,8 +134,18 @@ export default function AdminPage() {
   }, [applications]);
 
   const handleLogout = async () => {
-    await signOut();
-    router.replace("/login");
+    try {
+      setLoggingOut(true);
+      setErrorMessage("");
+
+      await signOut();
+
+      router.replace("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      setErrorMessage("Unable to logout. Please try again.");
+      setLoggingOut(false);
+    }
   };
 
   const handleReviewApplication = (applicationId) => {
@@ -175,10 +179,14 @@ export default function AdminPage() {
           <nav style={navStyle}>
             <button
               type="button"
-              style={navButtonStyle}
+              style={{
+                ...navButtonStyle,
+                ...(loggingOut ? disabledButtonStyle : {}),
+              }}
               onClick={handleLogout}
+              disabled={loggingOut}
             >
-              LOGOUT
+              {loggingOut ? "LOGGING OUT..." : "LOGOUT"}
             </button>
           </nav>
         </header>
@@ -227,14 +235,10 @@ export default function AdminPage() {
           </p>
         </section>
 
-        {errorMessage && (
-          <p style={errorTextStyle}>{errorMessage}</p>
-        )}
+        {errorMessage && <p style={errorTextStyle}>{errorMessage}</p>}
 
         <section style={tableWrapperStyle}>
-          <div style={tableTitleBarStyle}>
-            APPLICATIONS OVERVIEW
-          </div>
+          <div style={tableTitleBarStyle}>APPLICATIONS OVERVIEW</div>
 
           <table style={tableStyle}>
             <thead>
@@ -258,8 +262,7 @@ export default function AdminPage() {
                 </tr>
               ) : (
                 filteredApplications.map((app, index) => {
-                  const applicationId =
-                    app.id || app.applicationId;
+                  const applicationId = app.id || app.applicationId;
 
                   const currentStatus =
                     app.applicationStatus ||
@@ -285,19 +288,13 @@ export default function AdminPage() {
                       </td>
 
                       <td style={tableCellStyle}>
-                        {app.intendedIntake ||
-                          app.intake ||
-                          "Date"}
+                        {app.intendedIntake || app.intake || "Date"}
                       </td>
 
-                      <td style={tableCellStyle}>
-                        {currentStatus}
-                      </td>
+                      <td style={tableCellStyle}>{currentStatus}</td>
 
                       <td style={tableCellStyle}>
-                        {formatDate(
-                          app.createdAt || app.submittedAt
-                        )}
+                        {formatDate(app.createdAt || app.submittedAt)}
                       </td>
 
                       <td style={tableCellStyle}>
@@ -305,9 +302,7 @@ export default function AdminPage() {
                           type="button"
                           style={reviewButtonStyle}
                           onClick={() =>
-                            handleReviewApplication(
-                              applicationId
-                            )
+                            handleReviewApplication(applicationId)
                           }
                         >
                           REVIEW
@@ -362,7 +357,6 @@ const pageStyle = {
 const frameStyle = {
   minHeight: "calc(100vh - 20px)",
   width: "100%",
-
   background: "#F7F1E8",
   padding: "0 40px 50px",
   boxSizing: "border-box",
@@ -412,6 +406,11 @@ const navButtonStyle = {
   fontSize: "16px",
   fontWeight: "700",
   cursor: "pointer",
+};
+
+const disabledButtonStyle = {
+  opacity: "0.6",
+  cursor: "not-allowed",
 };
 
 const welcomeBoxStyle = {
