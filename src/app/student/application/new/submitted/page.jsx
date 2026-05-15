@@ -191,131 +191,146 @@ function formatToday() {
 
 const pageStyle = {
   minHeight: "100vh",
+  width: "100%",
   background: "#F7F1E8",
-  padding: "6px",
+  padding: "0",
   fontFamily: "Arial, Helvetica, sans-serif",
+  boxSizing: "border-box",
 };
 
 const frameStyle = {
-  minHeight: "calc(100vh - 12px)",
-  border: "1.5px solid #000",
+  minHeight: "calc(100vh - 20px)",
+  width: "100%",
+
   background: "#F7F1E8",
-  padding: "0 110px 60px",
+  display: "flex",
+  flexDirection: "column",
 };
 
 const headerStyle = {
-  height: "72px",
+  height: "95px",
+  width: "100vw",
+  position: "relative",
+  left: "50%",
+  transform: "translateX(-50%)",
   background: "#fff",
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "0 28px",
-  margin: "0 -110px 26px",
-  borderBottom: "1px solid rgba(0,0,0,0.15)",
+  padding: "0 45px",
+  margin: "0 0 24px",
+  borderBottom: "2px solid #000",
 };
 
 const logoStyle = {
   margin: 0,
-  fontSize: "24px",
-  fontWeight: "800",
-  lineHeight: "24px",
+  fontSize: "42px",
+  fontWeight: "900",
+  lineHeight: "42px",
 };
 
 const subtitleStyle = {
-  margin: "2px 0 0",
-  fontSize: "10px",
-  lineHeight: "12px",
+  margin: "6px 0 0",
+  fontSize: "16px",
+  lineHeight: "20px",
 };
 
 const logoutButtonStyle = {
   background: "#fff",
-  border: "1.5px solid #3B2E5A",
+  border: "2px solid #3B2E5A",
   color: "#3B2E5A",
-  padding: "8px 24px",
-  fontSize: "11px",
-  fontWeight: "700",
+  padding: "14px 36px",
+  fontSize: "16px",
+  fontWeight: "800",
   cursor: "pointer",
 };
 
 const quickActionsStyle = {
-  maxWidth: "900px",
-  margin: "0 auto 24px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 40px",
+  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "14px 28px 22px",
+  padding: "34px 40px 40px",
   textAlign: "center",
+  boxSizing: "border-box",
 };
 
 const quickActionsTitleStyle = {
-  margin: "0 0 10px",
-  fontSize: "11px",
+  margin: "0 0 24px",
+  fontSize: "24px",
   fontWeight: "900",
 };
 
 const quickButtonRowStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(4, 1fr)",
-  gap: "36px",
+  gap: "32px",
+  width: "100%",
 };
 
 const quickButtonStyle = {
-  height: "28px",
+  height: "68px",
   background: "#fff",
-  border: "1.5px solid #000",
-  fontSize: "8px",
-  fontWeight: "800",
+  border: "2px solid #000",
+  fontSize: "16px",
+  fontWeight: "900",
   cursor: "pointer",
 };
 
 const successCardStyle = {
-  width: "520px",
-  margin: "0 auto 22px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 40px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "18px 36px 16px",
+  padding: "40px 50px",
   textAlign: "center",
+  boxSizing: "border-box",
 };
 
 const checkCircleStyle = {
-  width: "42px",
-  height: "42px",
-  margin: "0 auto 8px",
-  border: "2px solid #000",
+  width: "90px",
+  height: "90px",
+  margin: "0 auto 20px",
+  border: "3px solid #000",
   borderRadius: "50%",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: "28px",
-  fontWeight: "800",
+  fontSize: "50px",
+  fontWeight: "900",
 };
 
 const successTitleStyle = {
-  margin: "0 0 3px",
-  fontSize: "15px",
+  margin: "0 0 12px",
+  fontSize: "34px",
   fontWeight: "900",
 };
 
 const successSubtitleStyle = {
-  margin: "0 0 12px",
-  fontSize: "8px",
+  margin: "0 0 30px",
+  fontSize: "18px",
   fontWeight: "700",
 };
 
 const summaryBoxStyle = {
-  width: "330px",
+  width: "100%",
+  maxWidth: "1000px",
   margin: "0 auto",
-  border: "1.5px solid #000",
+  border: "2px solid #000",
   background: "#F7F1E8",
-  padding: "8px 14px",
+  padding: "24px 30px",
   textAlign: "left",
+  boxSizing: "border-box",
 };
 
 const summaryRowStyle = {
   display: "grid",
-  gridTemplateColumns: "120px 1fr",
-  gap: "20px",
-  marginBottom: "7px",
-  fontSize: "8px",
+  gridTemplateColumns: "240px 1fr",
+  gap: "30px",
+  marginBottom: "18px",
+  fontSize: "16px",
 };
 
 const summaryLabelStyle = {
@@ -327,50 +342,53 @@ const summaryValueStyle = {
 };
 
 const nextBoxStyle = {
-  width: "520px",
-  margin: "0 auto 18px",
-  border: "1.5px solid #000",
+  width: "100%",
+  maxWidth: "1700px",
+  margin: "0 auto 34px",
+  border: "2px solid #000",
   background: "#fff",
-  padding: "18px 36px",
+  padding: "40px 50px",
+  boxSizing: "border-box",
 };
 
 const nextTitleStyle = {
-  margin: "0 auto 12px",
-  paddingBottom: "5px",
-  width: "260px",
+  margin: "0 auto 26px",
+  paddingBottom: "10px",
+  width: "420px",
   textAlign: "center",
-  borderBottom: "1.5px solid #000",
-  fontSize: "9px",
+  borderBottom: "2px solid #000",
+  fontSize: "20px",
   fontWeight: "900",
 };
 
 const nextListStyle = {
-  margin: "0 0 14px",
-  paddingLeft: "16px",
-  fontSize: "8px",
+  margin: "0 0 28px",
+  paddingLeft: "28px",
+  fontSize: "16px",
   fontWeight: "700",
-  lineHeight: "14px",
+  lineHeight: "32px",
 };
 
 const noteBoxStyle = {
   background: "#F7F1E8",
-  padding: "10px 12px",
-  fontSize: "8px",
+  padding: "22px 24px",
+  fontSize: "15px",
   fontWeight: "700",
-  lineHeight: "13px",
+  lineHeight: "28px",
 };
 
 const bottomButtonWrapperStyle = {
   textAlign: "center",
+  marginBottom: "40px",
 };
 
 const dashboardButtonStyle = {
-  width: "160px",
-  height: "28px",
+  width: "320px",
+  height: "70px",
   background: "#3B2E5A",
   color: "#fff",
-  border: "1.5px solid #3B2E5A",
-  fontSize: "8px",
-  fontWeight: "800",
+  border: "2px solid #3B2E5A",
+  fontSize: "18px",
+  fontWeight: "900",
   cursor: "pointer",
 };
