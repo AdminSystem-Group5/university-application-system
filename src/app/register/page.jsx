@@ -369,6 +369,22 @@ export default function RegisterPage() {
         >
           CREATE YOUR ACCOUNT
         </h1>
+        <button
+  type="button"
+  onClick={() => router.push("/")}
+  style={{
+    width: "180px",
+    height: "44px",
+    background: "#fff",
+    border: "2px solid #21132f",
+    color: "#21132f",
+    fontWeight: "700",
+    cursor: "pointer",
+    marginBottom: "26px",
+  }}
+>
+  ← BACK TO HOME
+</button>
 
         <form onSubmit={handleRegister}>
           <input
