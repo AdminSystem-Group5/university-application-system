@@ -145,9 +145,12 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -177,8 +180,10 @@ export default function LoginPage() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        setErrorMessage("User profile not found in Firestore.");
-        setLoading(false);
+        // Firebase Auth account exists but Firestore profile is missing.
+        // This happens when registration failed mid-way (e.g. old broken rules).
+        // Redirect to register page in repair mode so the user can complete setup.
+        router.replace("/register?repair=1");
         return;
       }
 
@@ -187,6 +192,15 @@ export default function LoginPage() {
       const userRole = String(userData?.role || "")
         .trim()
         .toLowerCase();
+
+      // DEBUG — remove after fixing
+      console.log("DEBUG login:", {
+        uid: firebaseUser.uid,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        docExists: userSnap.exists(),
+        rawRole: userData?.role,
+        userRole,
+      });
 
       if (userRole === "student") {
         router.replace("/student");
@@ -198,21 +212,26 @@ export default function LoginPage() {
         return;
       }
 
-      setErrorMessage("User role not recognised.");
+      if (userRole === "agent") {
+        router.replace("/agent");
+        return;
+      }
+
+      setErrorMessage(`Role: "${userData?.role}" UID: ${firebaseUser.uid.slice(0,8)} Project: ${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`);
       setLoading(false);
     } catch (error) {
       console.error("Login error:", error);
 
       if (error.code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage(t("login.errors.invalidCredential"));
       } else if (error.code === "auth/user-not-found") {
-        setErrorMessage("No account found with this email.");
+        setErrorMessage(t("login.errors.userNotFound"));
       } else if (error.code === "auth/wrong-password") {
-        setErrorMessage("Incorrect password.");
+        setErrorMessage(t("login.errors.wrongPassword"));
       } else if (error.code === "permission-denied") {
-        setErrorMessage("Firestore permission denied.");
+        setErrorMessage(t("login.errors.permissionDenied"));
       } else {
-        setErrorMessage("Login failed. Please try again.");
+        setErrorMessage(t("login.errors.generic"));
       }
 
       setLoading(false);
@@ -221,6 +240,10 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
+      <div style={{ position: "absolute", top: "16px", right: "16px", zIndex: 10 }}>
+        <LanguageSwitcher />
+      </div>
+
       <section className="login-card">
         <div className="login-header">
           <button
@@ -228,17 +251,17 @@ export default function LoginPage() {
             className="back-home-link"
             onClick={() => router.push("/")}
           >
-            BACK TO HOME
+            {t("nav.backHome")}
           </button>
 
-          <h1 className="login-title">LOGIN</h1>
+          <h1 className="login-title">{t("login.title")}</h1>
         </div>
 
         <form className="login-form" onSubmit={handleLogin}>
           <input
             type="email"
             className="login-input"
-            placeholder="Email"
+            placeholder={t("login.email")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -248,7 +271,7 @@ export default function LoginPage() {
           <input
             type="password"
             className="login-input"
-            placeholder="Password"
+            placeholder={t("login.password")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -258,19 +281,19 @@ export default function LoginPage() {
           {errorMessage && <p className="login-error">{errorMessage}</p>}
 
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? "LOGGING IN..." : "LOGIN"}
+            {loading ? t("login.submitting") : t("login.submit")}
           </button>
         </form>
 
         <div className="login-register">
-          <p>DON&apos;T HAVE AN ACCOUNT?</p>
+          <p>{t("login.noAccount")}</p>
 
           <button
             type="button"
             className="register-link"
             onClick={() => router.push("/register")}
           >
-            REGISTER HERE
+            {t("login.registerLink")}
           </button>
         </div>
       </section>

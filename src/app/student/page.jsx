@@ -1,3 +1,4 @@
+// student dashboard - shows applications and quick actions
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +14,8 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const STATUS_COLOURS = {
   Submitted: "#fff",
@@ -25,6 +28,7 @@ const STATUS_COLOURS = {
 
 export default function StudentPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [student, setStudent] = useState(null);
   const [applications, setApplications] = useState([]);
@@ -159,18 +163,18 @@ export default function StudentPage() {
     student?.displayName || student?.fullName || student?.name || "USER";
 
   const trackingItems = [
-    { label: "SUBMITTED", count: getStatusCount("Submitted") },
-    { label: "DRAFT", count: getStatusCount("Draft") },
-    { label: "OFFERED", count: getStatusCount("Offered") },
-    { label: "UNDER REVIEW", count: getStatusCount("Under Review") },
-    { label: "REJECTED", count: getStatusCount("Rejected") },
+    { label: t("student.statusSubmitted"), count: getStatusCount("Submitted") },
+    { label: t("student.statusDraft"), count: getStatusCount("Draft") },
+    { label: t("student.statusOffered"), count: getStatusCount("Offered") },
+    { label: t("student.statusUnderReview"), count: getStatusCount("Under Review") },
+    { label: t("student.statusRejected"), count: getStatusCount("Rejected") },
   ];
 
   if (loading) {
     return (
       <main style={pageStyle}>
         <div style={dashboardFrame}>
-          <h1 style={loadingText}>Loading student dashboard...</h1>
+          <h1 style={loadingText}>{t("student.loading")}</h1>
         </div>
       </main>
     );
@@ -180,11 +184,11 @@ export default function StudentPage() {
     return (
       <main style={pageStyle}>
         <div style={dashboardFrame}>
-          <h1>Student Dashboard</h1>
+          <h1>{t("student.error")}</h1>
           <p style={{ color: "red" }}>{errorMessage}</p>
 
           <button type="button" onClick={() => router.replace("/")}>
-            BACK TO HOME
+            {t("common.backHome")}
           </button>
         </div>
       </main>
@@ -196,7 +200,7 @@ export default function StudentPage() {
       <div style={dashboardFrame}>
         <header style={topHeaderStyle}>
           <div>
-            <h1 style={logoStyle}>UAAMS</h1>
+            <h1 style={logoStyle}>{t("nav.brand")}</h1>
             <p style={subtitleStyle}>
               University Administration & Application
               <br />
@@ -204,23 +208,26 @@ export default function StudentPage() {
             </p>
           </div>
 
-          <button type="button" onClick={handleLogout} style={logoutButton}>
-            LOGOUT
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <LanguageSwitcher />
+            <button type="button" onClick={handleLogout} style={logoutButton}>
+              {t("nav.logout")}
+            </button>
+          </div>
         </header>
 
         <section style={welcomeBarStyle}>
           <h2 style={welcomeTitleStyle}>
-            WELCOME {studentDisplayName.toUpperCase()}!
+            {t("student.welcome")} {studentDisplayName.toUpperCase()}!
           </h2>
 
           <p style={welcomeTextStyle}>
-            MANAGE AND TRACK YOUR APPLICATIONS HERE
+            {t("student.subtitle")}
           </p>
         </section>
 
         <section style={quickActionsStyle}>
-          <h3 style={sectionTitleStyle}>QUICK ACTIONS</h3>
+          <h3 style={sectionTitleStyle}>{t("student.quickActions")}</h3>
 
           <div style={quickButtonRow}>
             <button
@@ -228,13 +235,11 @@ export default function StudentPage() {
               style={actionButton}
               onClick={handleStartNewApplication}
             >
-              START NEW APPLICATION
+              {t("student.newApplication")}
             </button>
 
-          
-
             <button type="button" style={actionButton} onClick={handleProfile}>
-              PROFILE
+              {t("student.profile")}
             </button>
 
             <button
@@ -242,13 +247,21 @@ export default function StudentPage() {
               style={actionButton}
               onClick={handleUploadDocuments}
             >
-              UPLOAD DOCUMENTS
+              {t("student.uploadDocuments")}
+            </button>
+
+            <button
+              type="button"
+              style={actionButton}
+              onClick={() => router.push("/student/agent")}
+            >
+              {t("student.linkAgent")}
             </button>
           </div>
         </section>
 
         <section style={trackingSectionStyle}>
-          <h3 style={sectionTitleStyle}>APPLICATIONS TRACKING</h3>
+          <h3 style={sectionTitleStyle}>{t("student.tracking")}</h3>
 
           <div style={trackingGridStyle}>
             {trackingItems.map((item) => (
@@ -262,7 +275,7 @@ export default function StudentPage() {
 
         <section style={bottomGridStyle}>
           <div id="applications-overview" style={overviewBoxStyle}>
-            <h3 style={sectionTitleStyle}>APPLICATIONS OVERVIEW</h3>
+            <h3 style={sectionTitleStyle}>{t("student.overview")}</h3>
 
             {applicationError && (
               <p style={applicationErrorStyle}>{applicationError}</p>
@@ -271,12 +284,12 @@ export default function StudentPage() {
             <table style={tableStyle}>
               <thead>
                 <tr>
-                  <th style={thStyle}>APPLICATION ID</th>
-                  <th style={thStyle}>UNIVERSITY</th>
-                  <th style={thStyle}>COURSE</th>
-                  <th style={thStyle}>INTAKE</th>
-                  <th style={thStyle}>STATUS</th>
-                  <th style={thStyle}>ACTION</th>
+                  <th style={thStyle}>{t("student.colId")}</th>
+                  <th style={thStyle}>{t("student.colUniversity")}</th>
+                  <th style={thStyle}>{t("student.colCourse")}</th>
+                  <th style={thStyle}>{t("student.colIntake")}</th>
+                  <th style={thStyle}>{t("student.colStatus")}</th>
+                  <th style={thStyle}>{t("student.colAction")}</th>
                 </tr>
               </thead>
 
@@ -284,7 +297,7 @@ export default function StudentPage() {
                 {applicationsLoading && (
                   <tr>
                     <td colSpan={6} style={emptyRowStyle}>
-                      Loading applications...
+                      {t("student.loadingApps")}
                     </td>
                   </tr>
                 )}
@@ -292,7 +305,7 @@ export default function StudentPage() {
                 {!applicationsLoading && applications.length === 0 && (
                   <tr>
                     <td colSpan={6} style={emptyRowStyle}>
-                      No applications found.
+                      {t("student.noApps")}
                     </td>
                   </tr>
                 )}
@@ -315,7 +328,7 @@ export default function StudentPage() {
                           style={detailsButton}
                           onClick={() => handleViewDetails(app.documentId)}
                         >
-                          VIEW DETAILS
+                          {t("student.view")}
                         </button>
                       </td>
                     </tr>
@@ -325,11 +338,11 @@ export default function StudentPage() {
           </div>
 
           <aside style={notificationsBoxStyle}>
-            <h3 style={notificationTitleStyle}>NOTIFICATIONS</h3>
+            <h3 style={notificationTitleStyle}>{t("student.notifications")}</h3>
 
             <div style={notificationListStyle}>
               {notificationsLoading && (
-                <p style={notificationItemStyle}>Loading notifications...</p>
+                <p style={notificationItemStyle}>{t("student.loadingNotifs")}</p>
               )}
 
               {notificationError && (
@@ -339,7 +352,7 @@ export default function StudentPage() {
               {!notificationsLoading &&
                 !notificationError &&
                 notifications.length === 0 && (
-                  <p style={notificationItemStyle}>No notifications found.</p>
+                  <p style={notificationItemStyle}>{t("student.noNotifs")}</p>
                 )}
 
               {!notificationsLoading &&
@@ -382,7 +395,7 @@ async function fetchStudentNotifications(db, firebaseUser) {
 
   const notificationsQuery = query(
     notificationsRef,
-    where("studentId", "==", firebaseUser.uid)
+    where("userId", "==", firebaseUser.uid)
   );
 
   const querySnapshot = await getDocs(notificationsQuery);
@@ -637,7 +650,7 @@ const sectionTitleStyle = {
 
 const quickButtonRow = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
+  gridTemplateColumns: "repeat(4, 1fr)",
   gap: "30px",
 };
 

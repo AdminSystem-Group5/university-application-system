@@ -1,3 +1,4 @@
+// about page
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -6,9 +7,12 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function AboutPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [showLogin, setShowLogin] = useState(false);
 
@@ -54,7 +58,7 @@ export default function AboutPage() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        setErrorMessage("User profile not found.");
+        setErrorMessage(t("login.errors.profileNotFound"));
         setLoading(false);
         return;
       }
@@ -75,21 +79,21 @@ export default function AboutPage() {
         return;
       }
 
-      setErrorMessage("User role not recognised.");
+      setErrorMessage(t("login.errors.roleUnknown"));
       setLoading(false);
     } catch (error) {
       console.error("Login error:", error);
 
       if (error.code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage(t("login.errors.invalidCredential"));
       } else if (error.code === "auth/user-not-found") {
-        setErrorMessage("No account found with this email.");
+        setErrorMessage(t("login.errors.userNotFound"));
       } else if (error.code === "auth/wrong-password") {
-        setErrorMessage("Incorrect password.");
+        setErrorMessage(t("login.errors.wrongPassword"));
       } else if (error.code === "permission-denied") {
-        setErrorMessage("Firestore permission denied.");
+        setErrorMessage(t("login.errors.permissionDenied"));
       } else {
-        setErrorMessage("Login failed. Please try again.");
+        setErrorMessage(t("login.errors.generic"));
       }
 
       setLoading(false);
@@ -105,7 +109,7 @@ export default function AboutPage() {
             <div className="brand-block">
               <h1 className="logo">UAAMS</h1>
               <p className="subtitle">
-                University Administration & Application Management System
+                {t("nav.subtitle")}
               </p>
             </div>
 
@@ -115,7 +119,7 @@ export default function AboutPage() {
                 onClick={() => router.push("/")}
                 className="btn btn-outline nav-btn"
               >
-                DASHBOARD
+                {t("nav.dashboard")}
               </button>
 
               <button
@@ -123,17 +127,18 @@ export default function AboutPage() {
                 onClick={() => router.push("/partners")}
                 className="btn btn-outline nav-btn"
               >
-                PARTNERS
+                {t("nav.partners")}
               </button>
             </div>
 
             <div className="topbar-actions">
+              <LanguageSwitcher />
               <button
                 type="button"
                 onClick={openLoginModal}
                 className="btn btn-outline"
               >
-                LOGIN
+                {t("nav.login")}
               </button>
 
               <button
@@ -141,7 +146,7 @@ export default function AboutPage() {
                 onClick={() => router.push("/register")}
                 className="btn btn-primary"
               >
-                REGISTER
+                {t("nav.register")}
               </button>
             </div>
           </div>
@@ -161,12 +166,11 @@ export default function AboutPage() {
               }}
             >
               <h1 style={{ color: "#3B2E5A", marginBottom: "12px" }}>
-                ABOUT US
+                {t("about.title")}
               </h1>
 
               <p style={{ maxWidth: "720px", margin: "0 auto" }}>
-                Learn more about the University Administration & Application
-                Management System and how it supports students and universities.
+                {t("about.subtitle")}
               </p>
             </div>
 
@@ -185,16 +189,11 @@ export default function AboutPage() {
                   color: "#3B2E5A",
                 }}
               >
-                WHAT IS UAAMS?
+                {t("about.whatIsTitle")}
               </h3>
 
               <p style={{ lineHeight: "1.7" }}>
-                The University Administration & Application Management System
-                (UAAMS) is a centralised platform designed to simplify student
-                applications and administrative processes. It allows students to
-                submit applications, upload documents, and track their progress,
-                while universities can efficiently review and manage admissions
-                in one place.
+                {t("about.whatIsDesc")}
               </p>
             </div>
 
@@ -207,29 +206,29 @@ export default function AboutPage() {
               }}
             >
               <FeatureCard
-                title="FOR STUDENTS"
+                title={t("about.forStudents")}
                 items={[
-                  "Submit applications online",
-                  "Upload supporting documents",
-                  "Track application status",
+                  t("about.student1"),
+                  t("about.student2"),
+                  t("about.student3"),
                 ]}
               />
 
               <FeatureCard
-                title="FOR UNIVERSITIES"
+                title={t("about.forUniversities")}
                 items={[
-                  "Review applications efficiently",
-                  "Manage admission decisions",
-                  "Communicate outcomes",
+                  t("about.uni1"),
+                  t("about.uni2"),
+                  t("about.uni3"),
                 ]}
               />
 
               <FeatureCard
-                title="CENTRALISED SYSTEM"
+                title={t("about.centralised")}
                 items={[
-                  "Single unified platform",
-                  "Secure document storage",
-                  "Real-time updates",
+                  t("about.central1"),
+                  t("about.central2"),
+                  t("about.central3"),
                 ]}
               />
             </div>
@@ -259,7 +258,7 @@ export default function AboutPage() {
             {/* NAVIGATION */}
             <div>
               <h4 style={{ marginBottom: "14px", fontWeight: 700 }}>
-                NAVIGATION
+                {t("home.navNavigation")}
               </h4>
 
               <div
@@ -274,14 +273,14 @@ export default function AboutPage() {
                   onClick={() => router.push("/partners")}
                   style={{ cursor: "pointer" }}
                 >
-                  Partners
+                  {t("home.navPartners")}
                 </span>
 
                 <span
                   onClick={() => router.push("/about")}
                   style={{ cursor: "pointer" }}
                 >
-                  About Us
+                  {t("home.navAboutUs")}
                 </span>
               </div>
             </div>
@@ -293,22 +292,22 @@ export default function AboutPage() {
               </h4>
 
               <p style={{ color: "var(--text-soft)", lineHeight: "1.7" }}>
-                University Administration & Application Management System
+                {t("home.footerDesc")}
               </p>
 
               <p style={{ color: "var(--text-light)", lineHeight: "1.8" }}>
-                Full Address
+                {t("about.footerAddress")}
                 <br />
-                Email Address
+                {t("about.footerEmail")}
                 <br />
-                Full Phone Number
+                {t("about.footerPhone")}
               </p>
             </div>
 
             {/* SUPPORT */}
             <div style={{ textAlign: "right" }}>
               <h4 style={{ marginBottom: "14px", fontWeight: 700 }}>
-                SUPPORT
+                {t("home.footerSupport")}
               </h4>
 
               <div
@@ -320,8 +319,8 @@ export default function AboutPage() {
                   color: "var(--text-soft)",
                 }}
               >
-                <span>Privacy Policy</span>
-                <span>Terms & Conditions</span>
+                <span>{t("home.footerPrivacy")}</span>
+                <span>{t("home.footerTerms")}</span>
               </div>
             </div>
           </div>
@@ -334,7 +333,7 @@ export default function AboutPage() {
               color: "var(--text-light)",
             }}
           >
-            2026 UAAMS. All rights reserved.
+            {t("home.footerCopyright")}
           </div>
         </footer>
       </div>
@@ -367,14 +366,14 @@ export default function AboutPage() {
                 fontWeight: 700,
               }}
             >
-              BACK
+              {t("login.back")}
             </button>
 
-            <h3 style={{ marginBottom: "20px" }}>LOGIN</h3>
+            <h3 style={{ marginBottom: "20px" }}>{t("login.title")}</h3>
 
             <form onSubmit={handleLogin}>
               <input
-                placeholder="Email"
+                placeholder={t("login.email")}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -384,7 +383,7 @@ export default function AboutPage() {
               />
 
               <input
-                placeholder="Password"
+                placeholder={t("login.password")}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -410,7 +409,7 @@ export default function AboutPage() {
                 className="btn btn-primary"
                 disabled={loading}
               >
-                {loading ? "LOGGING IN..." : "LOGIN"}
+                {loading ? t("login.submitting") : t("login.submit")}
               </button>
             </form>
           </div>

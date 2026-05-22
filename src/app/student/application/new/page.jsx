@@ -1,3 +1,4 @@
+// new application form
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,6 +14,8 @@ import {
 } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const FORM_STORAGE_KEY = "uaams_new_application_form";
 const LEGACY_FORM_STORAGE_KEY = "studentApplicationDraft";
@@ -40,6 +43,7 @@ const DEFAULT_FORM_DATA = {
 
 export default function NewApplicationPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [universities, setUniversities] = useState([]);
   const [universitiesLoading, setUniversitiesLoading] = useState(false);
@@ -108,11 +112,11 @@ export default function NewApplicationPage() {
           setUniversities(fetchedUniversities);
 
           if (fetchedUniversities.length === 0) {
-            setUniversityError("No universities found in the database.");
+            setUniversityError(t("student.newApplication.noUniversitiesDb"));
           }
         } catch (universityFetchError) {
           console.error("Universities fetch error:", universityFetchError);
-          setUniversityError("Unable to load universities from the database.");
+          setUniversityError(t("student.newApplication.unableToLoadUniversities"));
           setUniversities([]);
         } finally {
           setUniversitiesLoading(false);
@@ -120,7 +124,7 @@ export default function NewApplicationPage() {
         }
       } catch (error) {
         console.error("New application page error:", error);
-        setErrorMessage("Unable to load application form.");
+        setErrorMessage(t("student.newApplication.errorLoadingForm"));
         setLoading(false);
       }
     });
@@ -154,13 +158,13 @@ export default function NewApplicationPage() {
         setCourses(fetchedCourses);
 
         if (fetchedCourses.length === 0) {
-          setCourseError("No courses found for this university.");
+          setCourseError(t("student.newApplication.noCoursesForUni"));
         }
       } catch (error) {
         if (cancelled) return;
 
         console.error("Courses fetch error:", error);
-        setCourseError("Unable to load courses for this university.");
+        setCourseError(t("student.newApplication.unableToLoadCourses"));
         setCourses([]);
       } finally {
         if (!cancelled) {
@@ -221,7 +225,7 @@ export default function NewApplicationPage() {
 
   const handleSaveDraft = () => {
     saveApplicationForm(formData, "form");
-    alert("Application saved as draft.");
+    alert(t("student.newApplication.draftSaved"));
   };
 
   const handleContinue = (e) => {
@@ -232,36 +236,36 @@ export default function NewApplicationPage() {
   };
 
   const universityOptions = universitiesLoading
-    ? [{ value: "", label: "LOADING UNIVERSITIES...", disabled: true }]
+    ? [{ value: "", label: t("student.newApplication.loadingUniversities"), disabled: true }]
     : universities.length > 0
     ? [
-        { value: "", label: "SELECT UNIVERSITY" },
+        { value: "", label: t("student.newApplication.selectUniversity") },
         ...universities.map((university) => ({
           value: university.id,
           label: university.name,
         })),
       ]
-    : [{ value: "", label: "NO UNIVERSITIES FOUND", disabled: true }];
+    : [{ value: "", label: t("student.newApplication.noUniversities"), disabled: true }];
 
   const courseOptions = !formData.selectedUniversityId
-    ? [{ value: "", label: "SELECT UNIVERSITY FIRST", disabled: true }]
+    ? [{ value: "", label: t("student.newApplication.selectUniversityFirst"), disabled: true }]
     : coursesLoading
-    ? [{ value: "", label: "LOADING COURSES...", disabled: true }]
+    ? [{ value: "", label: t("student.newApplication.loadingCourses"), disabled: true }]
     : courses.length > 0
     ? [
-        { value: "", label: "SELECT COURSE" },
+        { value: "", label: t("student.newApplication.selectCourse") },
         ...courses.map((course) => ({
           value: course.id,
           label: course.name,
         })),
       ]
-    : [{ value: "", label: "NO COURSES FOUND", disabled: true }];
+    : [{ value: "", label: t("student.newApplication.noCourses"), disabled: true }];
 
   if (loading) {
     return (
       <main style={pageStyle}>
         <div style={frameStyle}>
-          <h1>Loading application form...</h1>
+          <h1>{t("student.newApplication.loading")}</h1>
         </div>
       </main>
     );
@@ -271,11 +275,11 @@ export default function NewApplicationPage() {
     return (
       <main style={pageStyle}>
         <div style={frameStyle}>
-          <h1>New Application</h1>
+          <h1>{t("student.newApplication.title")}</h1>
           <p style={{ color: "red" }}>{errorMessage}</p>
 
           <button type="button" onClick={() => router.replace("/student")}>
-            BACK TO DASHBOARD
+            {t("student.application.backToDashboard")}
           </button>
         </div>
       </main>
@@ -295,9 +299,12 @@ export default function NewApplicationPage() {
             </p>
           </div>
 
-          <button type="button" onClick={handleLogout} style={logoutButton}>
-            LOGOUT
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <LanguageSwitcher />
+            <button type="button" onClick={handleLogout} style={logoutButton}>
+              {t("nav.logout")}
+            </button>
+          </div>
         </header>
 
         <section style={titleBarStyle}>
@@ -306,39 +313,39 @@ export default function NewApplicationPage() {
             onClick={() => router.push("/student")}
             style={backButton}
           >
-            BACK TO DASHBOARD
+            {t("student.application.backToDashboard")}
           </button>
 
           <div style={titleCenterStyle}>
-            <h2 style={pageTitleStyle}>NEW APPLICATION</h2>
+            <h2 style={pageTitleStyle}>{t("student.newApplication.title")}</h2>
             <p style={pageSubtitleStyle}>
-              COMPLETE THE FORM BELOW TO SUBMIT YOUR UNIVERSITY APPLICATION.
+              {t("student.newApplication.subtitle")}
             </p>
           </div>
         </section>
 
         <section style={stepsStyle}>
-          <div style={activeStepStyle}>STEP 1 : APPLICATION FORM</div>
+          <div style={activeStepStyle}>{t("student.newApplication.step1")}</div>
           <div style={stepLineStyle}></div>
-          <div style={stepStyle}>STEP 2 : UPLOAD DOCUMENTS</div>
+          <div style={stepStyle}>{t("student.newApplication.step2")}</div>
           <div style={stepLineStyle}></div>
-          <div style={stepStyle}>STEP 3 : REVIEW & SUBMIT</div>
+          <div style={stepStyle}>{t("student.newApplication.step3")}</div>
         </section>
 
         <form style={formBoxStyle} onSubmit={handleContinue}>
-          <FormSection title="A. PERSONAL INFORMATION">
+          <FormSection title={t("student.newApplication.personalInfo")}>
             <div style={twoColumnStyle}>
               <InputField
-                label="FULL NAME *"
+                label={t("student.newApplication.fullName")}
                 name="fullName"
-                placeholder="ENTER YOUR FULL NAME"
+                placeholder={t("student.newApplication.fullNamePlaceholder")}
                 value={formData.fullName}
                 onChange={handleChange}
                 required
               />
 
               <InputField
-                label="DATE OF BIRTH *"
+                label={t("student.newApplication.dateOfBirth")}
                 name="dateOfBirth"
                 type="date"
                 value={formData.dateOfBirth}
@@ -347,18 +354,18 @@ export default function NewApplicationPage() {
               />
 
               <InputField
-                label="NATIONALITY *"
+                label={t("student.newApplication.nationality")}
                 name="nationality"
-                placeholder="ENTER YOUR NATIONALITY"
+                placeholder={t("student.newApplication.nationalityPlaceholder")}
                 value={formData.nationality}
                 onChange={handleChange}
                 required
               />
 
               <InputField
-                label="PASSPORT NUMBER *"
+                label={t("student.newApplication.passportNumber")}
                 name="passportNumber"
-                placeholder="ENTER YOUR PASSPORT NUMBER"
+                placeholder={t("student.newApplication.passportPlaceholder")}
                 value={formData.passportNumber}
                 onChange={handleChange}
                 required
@@ -366,16 +373,16 @@ export default function NewApplicationPage() {
             </div>
           </FormSection>
 
-          <FormSection title="B. ACADEMIC INFORMATION">
+          <FormSection title={t("student.newApplication.academicInfo")}>
             <div style={twoColumnStyle}>
               <SelectField
-                label="HIGHEST QUALIFICATION *"
+                label={t("student.newApplication.highestQualification")}
                 name="highestQualification"
                 value={formData.highestQualification}
                 onChange={handleChange}
                 required
                 options={[
-                  "SELECT QUALIFICATION",
+                  t("student.newApplication.selectQualification"),
                   "High School",
                   "Foundation",
                   "Undergraduate",
@@ -385,27 +392,27 @@ export default function NewApplicationPage() {
               />
 
               <InputField
-                label="INSTITUTION NAME *"
+                label={t("student.newApplication.institutionName")}
                 name="institutionName"
-                placeholder="INSTITUTION NAME"
+                placeholder={t("student.newApplication.institutionPlaceholder")}
                 value={formData.institutionName}
                 onChange={handleChange}
                 required
               />
 
               <InputField
-                label="GRADUATION YEAR *"
+                label={t("student.newApplication.graduationYear")}
                 name="graduationYear"
-                placeholder="E.G. 2023"
+                placeholder={t("student.newApplication.graduationPlaceholder")}
                 value={formData.graduationYear}
                 onChange={handleChange}
                 required
               />
 
               <InputField
-                label="GPA/GRADE *"
+                label={t("student.newApplication.gpaGrade")}
                 name="gpaGrade"
-                placeholder="E.G. 3.8 OR A"
+                placeholder={t("student.newApplication.gpaPlaceholder")}
                 value={formData.gpaGrade}
                 onChange={handleChange}
                 required
@@ -413,11 +420,11 @@ export default function NewApplicationPage() {
             </div>
           </FormSection>
 
-          <FormSection title="C. COURSE INFORMATION">
+          <FormSection title={t("student.newApplication.courseInfo")}>
             <div style={twoColumnStyle}>
               <div>
                 <SelectField
-                  label="SELECTED UNIVERSITY *"
+                  label={t("student.newApplication.selectedUniversity")}
                   name="selectedUniversityId"
                   value={formData.selectedUniversityId}
                   onChange={handleChange}
@@ -433,7 +440,7 @@ export default function NewApplicationPage() {
 
               <div>
                 <SelectField
-                  label="COURSE NAME *"
+                  label={t("student.newApplication.courseName")}
                   name="selectedCourseId"
                   value={formData.selectedCourseId}
                   onChange={handleChange}
@@ -448,13 +455,13 @@ export default function NewApplicationPage() {
 
             <div style={fullWidthFieldStyle}>
               <SelectField
-                label="INTENDED INTAKE *"
+                label={t("student.newApplication.intendedIntake")}
                 name="intendedIntake"
                 value={formData.intendedIntake}
                 onChange={handleChange}
                 required
                 options={[
-                  "SELECT INTAKE",
+                  t("student.newApplication.selectIntake"),
                   "January 2026",
                   "May 2026",
                   "September 2026",
@@ -470,7 +477,7 @@ export default function NewApplicationPage() {
               onClick={() => router.push("/student")}
               style={cancelButton}
             >
-              CANCEL
+              {t("student.newApplication.cancel")}
             </button>
 
             <div style={rightButtonsStyle}>
@@ -479,11 +486,11 @@ export default function NewApplicationPage() {
                 onClick={handleSaveDraft}
                 style={draftButton}
               >
-                SAVE AS DRAFT
+                {t("student.newApplication.saveAsDraft")}
               </button>
 
               <button type="submit" style={continueButton}>
-                CONTINUE TO DOCUMENTS
+                {t("student.newApplication.continueToDocs")}
               </button>
             </div>
           </div>

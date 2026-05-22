@@ -1,15 +1,19 @@
+// application submitted confirmation page
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const FORM_STORAGE_KEY = "uaams_new_application_form";
 const SUBMISSION_STORAGE_KEY = "uaams_submitted_application_summary";
 
 export default function ApplicationSubmittedPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [summary, setSummary] = useState({
     applicationId: "",
@@ -73,13 +77,16 @@ export default function ApplicationSubmittedPage() {
             </p>
           </div>
 
-          <button type="button" style={logoutButtonStyle} onClick={handleLogout}>
-            LOGOUT
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <LanguageSwitcher />
+            <button type="button" style={logoutButtonStyle} onClick={handleLogout}>
+              {t("nav.logout")}
+            </button>
+          </div>
         </header>
 
         <section style={quickActionsStyle}>
-          <h2 style={quickActionsTitleStyle}>QUICK ACTIONS</h2>
+          <h2 style={quickActionsTitleStyle}>{t("student.submitted.quickActions")}</h2>
 
           <div style={quickButtonRowStyle}>
             <button
@@ -87,7 +94,7 @@ export default function ApplicationSubmittedPage() {
               style={quickButtonStyle}
               onClick={handleStartNewApplication}
             >
-              START NEW APPLICATION
+              {t("student.submitted.startNewApplication")}
             </button>
 
             <button
@@ -95,7 +102,7 @@ export default function ApplicationSubmittedPage() {
               style={quickButtonStyle}
               onClick={() => router.push("/student")}
             >
-              VIEW ALL APPLICATIONS
+              {t("student.submitted.viewAllApplications")}
             </button>
 
             <button
@@ -103,7 +110,7 @@ export default function ApplicationSubmittedPage() {
               style={quickButtonStyle}
               onClick={() => router.push("/student")}
             >
-              PROFILE
+              {t("student.submitted.profile")}
             </button>
 
             <button
@@ -111,7 +118,7 @@ export default function ApplicationSubmittedPage() {
               style={quickButtonStyle}
               onClick={() => router.push("/student/application/new/documents")}
             >
-              UPLOAD DOCUMENTS
+              {t("student.submitted.uploadDocuments")}
             </button>
           </div>
         </section>
@@ -119,35 +126,31 @@ export default function ApplicationSubmittedPage() {
         <section style={successCardStyle}>
           <div style={checkCircleStyle}>✓</div>
 
-          <h2 style={successTitleStyle}>APPLICATION SUBMITTED SUCCESSFULLY</h2>
+          <h2 style={successTitleStyle}>{t("student.submitted.successTitle")}</h2>
 
           <p style={successSubtitleStyle}>
-            YOUR APPLICATION HAS BEEN RECEIVED AND IS NOW MARKED AS SUBMITTED
+            {t("student.submitted.successSubtitle")}
           </p>
 
           <div style={summaryBoxStyle}>
-            <SummaryRow label="APPLICATION ID" value={summary.applicationId} />
-            <SummaryRow label="SUBMITTED ON" value={summary.submittedOn} />
-            <SummaryRow label="UNIVERSITY" value={summary.university} />
-            <SummaryRow label="COURSE" value={summary.course} />
+            <SummaryRow label={t("student.submitted.colAppId")} value={summary.applicationId} t={t} />
+            <SummaryRow label={t("student.submitted.colSubmittedOn")} value={summary.submittedOn} t={t} />
+            <SummaryRow label={t("student.submitted.colUniversity")} value={summary.university} t={t} />
+            <SummaryRow label={t("student.submitted.colCourse")} value={summary.course} t={t} />
           </div>
         </section>
 
         <section style={nextBoxStyle}>
-          <h3 style={nextTitleStyle}>WHAT HAPPENS NEXT</h3>
+          <h3 style={nextTitleStyle}>{t("student.submitted.whatNext")}</h3>
 
           <ul style={nextListStyle}>
-            <li>YOUR APPLICATION WILL BE REVIEWED BY THE UNIVERSITY</li>
-            <li>YOU WILL RECEIVE STATUS UPDATES IN YOUR DASHBOARD</li>
-            <li>
-              YOU MAY ALSO RECEIVE EMAIL NOTIFICATIONS ABOUT IMPORTANT CHANGES
-            </li>
+            <li>{t("student.submitted.next1")}</li>
+            <li>{t("student.submitted.next2")}</li>
+            <li>{t("student.submitted.next3")}</li>
           </ul>
 
           <div style={noteBoxStyle}>
-            <strong>NOTE:</strong> AVERAGE REVIEW TIME IS 2–4 WEEKS. YOU CAN
-            TRACK YOUR APPLICATION PROGRESS AT ANY TIME FROM THE DASHBOARD OR
-            APPLICATION DETAILS PAGE.
+            <strong>{t("student.submitted.noteLabel")}</strong> {t("student.submitted.noteText")}
           </div>
         </section>
 
@@ -157,7 +160,7 @@ export default function ApplicationSubmittedPage() {
             style={dashboardButtonStyle}
             onClick={() => router.push("/student")}
           >
-            BACK TO DASHBOARD
+            {t("student.submitted.backToDashboard")}
           </button>
         </div>
       </div>
@@ -165,11 +168,11 @@ export default function ApplicationSubmittedPage() {
   );
 }
 
-function SummaryRow({ label, value }) {
+function SummaryRow({ label, value, t }) {
   return (
     <div style={summaryRowStyle}>
       <span style={summaryLabelStyle}>{label}</span>
-      <span style={summaryValueStyle}>{value || "Not provided"}</span>
+      <span style={summaryValueStyle}>{value || t("student.application.notProvided")}</span>
     </div>
   );
 }

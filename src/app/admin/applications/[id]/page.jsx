@@ -1,9 +1,12 @@
+// admin application detail with AI screening panel
 "use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/auth-context";
 import { getApplicationById } from "@/lib/services/applicationService";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const DECISION_STATUSES = ["Under Review", "Offered", "Rejected"];
 
@@ -19,6 +22,7 @@ export default function ApplicationDetailsPage() {
   const params = useParams();
   const router = useRouter();
 
+  const { t } = useLanguage();
   const { firebaseUser, userData, isUniversityAdmin, isLoading, signOut } =
     useAuth();
 
@@ -50,7 +54,7 @@ export default function ApplicationDetailsPage() {
       setNewStatus(allowedStatus);
     } catch (error) {
       console.error("Error loading application:", error);
-      setErrorMessage("Failed to load application details.");
+      setErrorMessage(t("admin.applicationDetail.failedToLoad"));
     } finally {
       setLoadingApp(false);
     }
@@ -75,7 +79,6 @@ export default function ApplicationDetailsPage() {
     }
 
     if (!isUniversityAdmin) {
-      alert("Access denied. Admins only.");
       router.push("/login");
       return;
     }
@@ -95,7 +98,7 @@ export default function ApplicationDetailsPage() {
 
   const handleProcessDecision = () => {
     if (!application || !newStatus) {
-      setStatusMessage("Please select a status before proceeding.");
+      setStatusMessage(t("admin.applicationDetail.selectStatusFirst"));
       setStatusMessageType("error");
       return;
     }
@@ -132,7 +135,7 @@ export default function ApplicationDetailsPage() {
   if (isLoading || loadingApp) {
     return (
       <main style={pageStyle}>
-        <div style={loadingBoxStyle}>Loading application details...</div>
+        <div style={loadingBoxStyle}>{t("admin.applicationDetail.loading")}</div>
       </main>
     );
   }
@@ -141,7 +144,7 @@ export default function ApplicationDetailsPage() {
     return (
       <main style={pageStyle}>
         <div style={errorBoxStyle}>
-          <h1 style={errorTitleStyle}>Application Details</h1>
+          <h1 style={errorTitleStyle}>{t("admin.applicationDetail.loading")}</h1>
           <p style={errorTextStyle}>{errorMessage}</p>
 
           <button
@@ -149,7 +152,7 @@ export default function ApplicationDetailsPage() {
             style={primaryButtonStyle}
             onClick={() => router.push("/admin")}
           >
-            BACK TO APPLICATIONS
+            {t("admin.applicationDetail.backToApplications")}
           </button>
         </div>
       </main>
@@ -160,9 +163,9 @@ export default function ApplicationDetailsPage() {
     return (
       <main style={pageStyle}>
         <div style={errorBoxStyle}>
-          <h1 style={errorTitleStyle}>Application not found</h1>
+          <h1 style={errorTitleStyle}>{t("admin.applicationDetail.notFound")}</h1>
           <p style={errorTextStyle}>
-            The application may have been deleted or the link may be invalid.
+            {t("admin.applicationDetail.notFoundDesc")}
           </p>
 
           <button
@@ -170,7 +173,7 @@ export default function ApplicationDetailsPage() {
             style={primaryButtonStyle}
             onClick={() => router.push("/admin")}
           >
-            BACK TO APPLICATIONS
+            {t("admin.applicationDetail.backToApplications")}
           </button>
         </div>
       </main>
@@ -193,12 +196,13 @@ export default function ApplicationDetailsPage() {
           </div>
 
           <nav style={navStyle}>
+            <LanguageSwitcher />
             <button
               type="button"
               style={navButtonStyle}
               onClick={() => router.push("/admin")}
             >
-              DASHBOARD
+              {t("nav.dashboard")}
             </button>
 
             <button
@@ -206,84 +210,84 @@ export default function ApplicationDetailsPage() {
               style={navButtonStyle}
               onClick={() => router.push("/admin/applications")}
             >
-              APPLICATIONS
+              {t("nav.applications")}
             </button>
 
             <button type="button" style={navButtonStyle} onClick={handleLogout}>
-              LOGOUT
+              {t("nav.logout")}
             </button>
           </nav>
         </header>
 
         <section style={referenceBarStyle}>
           <div>
-            <strong>APPLICATION REFERENCE:</strong>{" "}
+            <strong>{t("admin.applicationDetail.appReference")}</strong>{" "}
             {application.applicationId || application.id || "N/A"}
           </div>
 
           <div>
-            <strong>APPLICANT:</strong>{" "}
+            <strong>{t("admin.applicationDetail.applicant")}</strong>{" "}
             {application.studentName || application.fullName || "N/A"}
           </div>
 
           <div>
-            <strong>STATUS:</strong> {application.applicationStatus || "N/A"}
+            <strong>{t("admin.applicationDetail.status")}</strong> {application.applicationStatus || "N/A"}
           </div>
         </section>
 
         <section style={contentGridStyle}>
           <div style={leftColumnStyle}>
-            <InfoPanel title="A. PERSONAL INFORMATION">
+            <InfoPanel title={t("admin.applicationDetail.personalInfo")}>
               <InfoRow
-                label="FULL NAME"
+                label={t("admin.applicationDetail.fullName")}
                 value={application.studentName || application.fullName}
               />
-              <InfoRow label="DATE OF BIRTH" value={application.dateOfBirth} />
+              <InfoRow label={t("admin.applicationDetail.dateOfBirth")} value={application.dateOfBirth} />
               <InfoRow
-                label="EMAIL ADDRESS"
+                label={t("admin.applicationDetail.emailAddress")}
                 value={application.studentEmail || application.email}
               />
-              <InfoRow label="NATIONALITY" value={application.nationality} />
+              <InfoRow label={t("admin.applicationDetail.nationality")} value={application.nationality} />
               <InfoRow
-                label="PASSPORT NUMBER"
+                label={t("admin.applicationDetail.passportNumber")}
                 value={application.passportNumber}
               />
             </InfoPanel>
 
-            <InfoPanel title="B. ACADEMIC INFORMATION">
+            <InfoPanel title={t("admin.applicationDetail.academicInfo")}>
               <InfoRow
-                label="HIGHEST QUALIFICATION"
+                label={t("admin.applicationDetail.highestQualification")}
                 value={application.highestQualification}
               />
               <InfoRow
-                label="INSTITUTION NAME"
+                label={t("admin.applicationDetail.institutionName")}
                 value={application.institutionName}
               />
               <InfoRow
-                label="GRADUATION YEAR"
+                label={t("admin.applicationDetail.graduationYear")}
                 value={application.graduationYear}
               />
-              <InfoRow label="GPA/GRADE" value={application.gpaGrade} />
+              <InfoRow label={t("admin.applicationDetail.gpaGrade")} value={application.gpaGrade} />
             </InfoPanel>
 
-            <InfoPanel title="C. COURSE INFORMATION">
+            <InfoPanel title={t("admin.applicationDetail.courseInfo")}>
               <InfoRow
-                label="SELECTED UNIVERSITY"
+                label={t("admin.applicationDetail.selectedUniversity")}
                 value={
                   application.selectedUniversity ||
                   application.universityName ||
                   application.university
                 }
               />
-              <InfoRow label="COURSE NAME" value={application.courseName} />
+              <InfoRow label={t("admin.applicationDetail.courseName")} value={application.courseName} />
               <InfoRow
-                label="INTENDED INTAKE"
+                label={t("admin.applicationDetail.intendedIntake")}
                 value={application.intendedIntake}
               />
             </InfoPanel>
 
-            <InfoPanel title="D. UPLOADED DOCUMENTS">
-              <DocumentsList documents={documents} />
+            <InfoPanel title={t("admin.applicationDetail.uploadedDocs")}>
+              <DocumentsList documents={documents} t={t} />
             </InfoPanel>
 
             <button
@@ -291,46 +295,84 @@ export default function ApplicationDetailsPage() {
               style={bottomBackButtonStyle}
               onClick={() => router.push("/admin")}
             >
-              BACK TO APPLICATIONS
+              {t("admin.applicationDetail.backToApplications")}
             </button>
           </div>
 
           <aside style={rightColumnStyle}>
-            <SidePanel title="CURRENT STATUS">
+            {application.submittedByAgent && (
+              <div style={{ marginBottom: "16px", padding: "14px 18px", background: "#EDE7FF", border: "2px solid #3B2E5A", boxSizing: "border-box" }}>
+                <p style={{ margin: "0 0 4px", fontSize: "11px", fontWeight: "900", color: "#3B2E5A" }}>{t("admin.applicationDetail.submittedViaAgent")}</p>
+                <p style={{ margin: 0, fontSize: "14px", fontWeight: "700" }}>{application.agencyName || "Agency"}</p>
+                <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#555" }}>{application.agentName || ""}</p>
+              </div>
+            )}
+
+            <SidePanel title={t("admin.applicationDetail.currentStatus")}>
               <div style={statusBadgeStyle(application.applicationStatus)}>
                 {application.applicationStatus || "N/A"}
               </div>
 
               <p style={smallTextStyle}>
-                SUBMITTED: {formatDate(application.submittedAt)}
+                {t("admin.applicationDetail.submitted")} {formatDate(application.submittedAt)}
               </p>
             </SidePanel>
 
-            <SidePanel title="INTERNAL NOTES">
+            <SidePanel title={t("admin.applicationDetail.paymentStatus")}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+                <div style={{
+                  display: "inline-block",
+                  padding: "4px 14px",
+                  fontWeight: "900",
+                  fontSize: "13px",
+                  background: application.paymentStatus === "paid" ? "#48A111" : application.paymentStatus === "waived" ? "#3B2E5A" : "#EF5350",
+                  color: "#fff",
+                }}>
+                  {application.paymentStatus === "paid" ? t("admin.applicationDetail.paid") : application.paymentStatus === "waived" ? t("admin.applicationDetail.waived") : t("admin.applicationDetail.unpaid")}
+                </div>
+              </div>
+              {application.paymentStatus === "paid" && (
+                <p style={{ ...smallTextStyle, color: "#1e5c0f" }}>{t("admin.applicationDetail.feeReceived")}</p>
+              )}
+              {(!application.paymentStatus || application.paymentStatus === "unpaid") && (
+                <p style={{ ...smallTextStyle, color: "#EF5350" }}>{t("admin.applicationDetail.feeNotPaid")}</p>
+              )}
+            </SidePanel>
+
+            <SidePanel title={t("admin.applicationDetail.aiScreening")}>
+              <AiScreeningPanel
+                screening={application.aiScreening}
+                applicationId={applicationId}
+                application={application}
+                onScreeningDone={(result) => setApplication((prev) => ({ ...prev, aiScreening: result }))}
+                t={t}
+              />
+            </SidePanel>
+
+            <SidePanel title={t("admin.applicationDetail.internalNotes")}>
               <textarea
                 value={internalNote}
                 onChange={(event) => setInternalNote(event.target.value)}
-                placeholder="Write admin notes here..."
+                placeholder={t("admin.applicationDetail.notesPlaceholder")}
                 style={notesTextareaStyle}
               />
             </SidePanel>
 
-            <SidePanel title="DECISION HISTORY">
+            <SidePanel title={t("admin.applicationDetail.decisionHistory")}>
               <ul style={historyListStyle}>
                 <li>
-                  Application submitted on {formatDate(application.submittedAt)}
-                  .
+                  {t("admin.applicationDetail.appSubmittedOn")} {formatDate(application.submittedAt)}.
                 </li>
                 <li>
-                  Current status: {application.applicationStatus || "N/A"}.
+                  {t("admin.applicationDetail.currentStatusLabel")} {application.applicationStatus || "N/A"}.
                 </li>
                 {application.updatedAt && (
-                  <li>Last updated on {formatDate(application.updatedAt)}.</li>
+                  <li>{t("admin.applicationDetail.lastUpdatedOn")} {formatDate(application.updatedAt)}.</li>
                 )}
               </ul>
             </SidePanel>
 
-            <SidePanel title="STATUS UPDATE">
+            <SidePanel title={t("admin.applicationDetail.statusUpdate")}>
               <div style={radioGroupStyle}>
                 {DECISION_STATUSES.map((status) => {
                   const selected = newStatus === status;
@@ -379,12 +421,126 @@ export default function ApplicationDetailsPage() {
               style={processButtonStyle}
               onClick={handleProcessDecision}
             >
-              PROCESS
+              {t("admin.applicationDetail.process")}
             </button>
           </aside>
         </section>
       </div>
     </main>
+  );
+}
+
+function AiScreeningPanel({ screening, applicationId, application, onScreeningDone, t }) {
+  const [running, setRunning] = useState(false);
+  const [runError, setRunError] = useState("");
+
+  const handleRunScreening = async () => {
+    setRunning(true);
+    setRunError("");
+    try {
+      const res = await fetch("/api/ai/screen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId, applicationData: application }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) { setRunError(data.error || "Screening failed."); return; }
+
+      const { doc: firestoreDoc, updateDoc: firestoreUpdate, serverTimestamp: ts } = await import("firebase/firestore");
+      const { getFirestoreDb } = await import("@/lib/firebase");
+      const db = getFirestoreDb();
+      const result = { ...data.screening, screenedAt: new Date().toISOString() };
+      await firestoreUpdate(firestoreDoc(db, "applications", applicationId), { aiScreening: result, updatedAt: ts() });
+      onScreeningDone(result);
+    } catch (err) {
+      setRunError(err.message || "Failed to run screening.");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  if (!screening) {
+    return (
+      <div>
+        <p style={{ margin: "0 0 14px", fontSize: "14px", color: "#888", fontStyle: "italic" }}>
+          {t("admin.applicationDetail.awaitingScreening")}
+        </p>
+        <button
+          type="button"
+          onClick={handleRunScreening}
+          disabled={running}
+          style={{ width: "100%", height: "40px", background: running ? "#ccc" : "#3B2E5A", color: "#fff", border: "none", fontSize: "13px", fontWeight: "900", cursor: running ? "not-allowed" : "pointer" }}
+        >
+          {running ? "Running…" : "Run AI Screening"}
+        </button>
+        {runError && <p style={{ color: "#EF5350", fontSize: "12px", marginTop: "8px" }}>{runError}</p>}
+      </div>
+    );
+  }
+
+  const score = screening.score ?? 0;
+  const scoreColour = score >= 70 ? "#48A111" : score >= 40 ? "#f59e0b" : "#EF5350";
+
+  const recColour =
+    screening.recommendation === "Strong Candidate"
+      ? "#48A111"
+      : screening.recommendation === "Weak Candidate"
+      ? "#EF5350"
+      : "#f59e0b";
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
+        <div style={{
+          width: "56px", height: "56px", borderRadius: "50%",
+          background: scoreColour, color: "#fff",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "18px", fontWeight: "900", flexShrink: 0,
+        }}>
+          {score}
+        </div>
+        <div>
+          <div style={{ fontSize: "11px", fontWeight: "900", color: "#555", marginBottom: "2px" }}>{t("admin.applicationDetail.scoreLabel")}</div>
+          <div style={{ fontSize: "13px", fontWeight: "900", color: recColour }}>
+            {screening.recommendation}
+          </div>
+        </div>
+      </div>
+
+      {screening.summary && (
+        <p style={{ margin: "0 0 12px", fontSize: "13px", color: "#333", lineHeight: "1.5" }}>
+          {screening.summary}
+        </p>
+      )}
+
+      {screening.flags && screening.flags.length > 0 && (
+        <div>
+          <p style={{ margin: "0 0 6px", fontSize: "11px", fontWeight: "900", color: "#555" }}>{t("admin.applicationDetail.flags")}</p>
+          <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12px", color: "#444", lineHeight: "1.8" }}>
+            {screening.flags.map((flag, i) => (
+              <li key={i}>{flag}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {screening.screenedAt && (
+        <p style={{ margin: "12px 0 0", fontSize: "11px", color: "#999" }}>
+          Screened: {new Date(screening.screenedAt).toLocaleDateString("en-GB")}
+          {" · "}Model: {screening.modelUsed || "gpt-3.5-turbo"}
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={handleRunScreening}
+        disabled={running}
+        style={{ marginTop: "14px", width: "100%", height: "36px", background: running ? "#ccc" : "#F7F1E8", color: "#3B2E5A", border: "2px solid #3B2E5A", fontSize: "12px", fontWeight: "900", cursor: running ? "not-allowed" : "pointer" }}
+      >
+        {running ? "Running…" : "Re-run AI Screening"}
+      </button>
+      {runError && <p style={{ color: "#EF5350", fontSize: "12px", marginTop: "8px" }}>{runError}</p>}
+    </div>
   );
 }
 
@@ -415,9 +571,9 @@ function InfoRow({ label, value }) {
   );
 }
 
-function DocumentsList({ documents }) {
+function DocumentsList({ documents, t }) {
   if (!documents || documents.length === 0) {
-    return <p style={smallTextStyle}>No documents uploaded.</p>;
+    return <p style={smallTextStyle}>{t("admin.applicationDetail.noDocuments")}</p>;
   }
 
   return (
@@ -427,7 +583,7 @@ function DocumentsList({ documents }) {
           <span style={documentIconStyle}>☁</span>
           <span style={documentNameStyle}>{documentItem.label}</span>
           <span style={documentFileStyle}>{documentItem.name}</span>
-          <strong style={documentStatusStyle}>UPLOADED</strong>
+          <strong style={documentStatusStyle}>{t("admin.applicationDetail.uploaded")}</strong>
         </div>
       ))}
     </div>
@@ -435,36 +591,43 @@ function DocumentsList({ documents }) {
 }
 
 function getDocuments(application) {
+  // Prefer studentDocuments collection data (checklist format) over application-embedded docs
   const source =
+    application._studentDocuments ||
     application.documents ||
     application.uploadedDocuments ||
     application.studentDocuments ||
     {};
 
   const documentLabels = {
-    passport: "PASSPORT COPY",
-    transcript: "ACADEMIC TRANSCRIPT",
+    passport:     "PASSPORT COPY",
+    transcript:   "ACADEMIC TRANSCRIPT",
     certificates: "CERTIFICATES",
-    englishTest: "ENGLISH LANGUAGE TEST",
+    englishTest:  "ENGLISH LANGUAGE TEST",
   };
 
   if (Array.isArray(source)) {
     return source.map((item, index) => ({
-      key: item.key || index,
+      key:   item.key || index,
       label: item.label || item.documentType || `DOCUMENT ${index + 1}`,
-      name: item.name || item.fileName || "Uploaded file",
+      name:  item.name || item.fileName || "Provided",
     }));
   }
 
   return Object.entries(source)
-    .filter(([, value]) => value)
+    .filter(([, value]) => {
+      if (!value) return false;
+      // {provided: false} means student un-ticked it — exclude
+      if (typeof value === "object" && value.provided === false) return false;
+      return true;
+    })
     .map(([key, value]) => ({
       key,
-      label: documentLabels[key] || key,
+      label: documentLabels[key] || key.toUpperCase(),
       name:
         typeof value === "string"
           ? value
-          : value.name || value.fileName || "Uploaded file",
+          : value.name || value.fileName || (value.provided ? "Confirmed ready" : "Provided"),
     }));
 }
 

@@ -1,17 +1,22 @@
+// application review and payment step
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { serverTimestamp } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { saveDraftAndGetId } from "@/lib/firebase-utils";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const FORM_STORAGE_KEY = "uaams_new_application_form";
 const DOCUMENTS_STORAGE_KEY = "uaams_new_application_documents";
 
 export default function ReviewApplicationPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [formData, setFormData] = useState({});
@@ -94,12 +99,10 @@ export default function ReviewApplicationPage() {
     setSubmitting(true);
 
     try {
-      const db = getFirestoreDb();
+      const applicationRef = `APP-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const applicationId = `APP-${Math.floor(1000 + Math.random() * 9000)}`;
-
-      const submittedApplication = {
-        applicationId,
+      const draftApplication = {
+        applicationId: applicationRef,
 
         studentId: firebaseUser.uid,
         studentUid: firebaseUser.uid,
@@ -136,40 +139,17 @@ export default function ReviewApplicationPage() {
           certificates: cleanDocumentForFirestore(documents.certificates),
           englishTest: cleanDocumentForFirestore(documents.englishTest),
         },
-
-        applicationStatus: "Submitted",
-        status: "Submitted",
-
-        createdAt: serverTimestamp(),
-        submittedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
       };
 
-      await addDoc(collection(db, "applications"), submittedApplication);
-
-      const submittedSummary = {
-        applicationId,
-        submittedOn: new Date().toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }),
-        university: formData.selectedUniversity || "Not provided",
-        course: formData.courseName || "Not provided",
-      };
-
-      sessionStorage.setItem(
-        "uaams_submitted_application_summary",
-        JSON.stringify(submittedSummary)
-      );
+      const docId = await saveDraftAndGetId(draftApplication);
 
       sessionStorage.removeItem(FORM_STORAGE_KEY);
       sessionStorage.removeItem(DOCUMENTS_STORAGE_KEY);
 
-      router.push("/student/application/new/submitted");
+      router.push(`/student/application/${docId}/payment`);
     } catch (error) {
       console.error("Submit application error:", error);
-      alert("Unable to submit application. Please try again.");
+      alert("Unable to save application. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -188,9 +168,12 @@ export default function ReviewApplicationPage() {
             </p>
           </div>
 
-          <button type="button" style={logoutButtonStyle} onClick={handleLogout}>
-            LOGOUT
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <LanguageSwitcher />
+            <button type="button" style={logoutButtonStyle} onClick={handleLogout}>
+              {t("nav.logout")}
+            </button>
+          </div>
         </header>
 
         <section style={titleBarStyle}>
@@ -199,85 +182,92 @@ export default function ReviewApplicationPage() {
             style={backDashboardButtonStyle}
             onClick={() => router.push("/student")}
           >
-            BACK TO DASHBOARD
+            {t("student.application.backToDashboard")}
           </button>
 
           <div style={titleTextWrapperStyle}>
-            <h2 style={pageTitleStyle}>NEW APPLICATION</h2>
+            <h2 style={pageTitleStyle}>{t("student.newApplication.title")}</h2>
             <p style={pageSubtitleStyle}>
-              REVIEW YOUR APPLICATION BEFORE SUBMITTING.
+              {t("student.review.subtitle")}
             </p>
           </div>
         </section>
 
         <section style={stepWrapperStyle}>
           <div style={stepItemStyle}>
-            <span>STEP 1 : APPLICATION FORM</span>
+            <span>{t("student.newApplication.step1")}</span>
             <div style={stepLineStyle}></div>
           </div>
 
           <div style={stepItemStyle}>
-            <span>STEP 2 : UPLOAD DOCUMENTS</span>
+            <span>{t("student.newApplication.step2")}</span>
             <div style={stepLineStyle}></div>
           </div>
 
           <div style={activeStepItemStyle}>
-            <span>STEP 3 : REVIEW & SUBMIT</span>
+            <span>{t("student.newApplication.step3")}</span>
           </div>
         </section>
 
         <section style={reviewBoxStyle}>
-          <ReviewSection title="A. PERSONAL INFORMATION">
+          <ReviewSection title={t("student.newApplication.personalInfo")}>
             <ReviewGrid>
-              <ReviewCard label="FULL NAME" value={formData.fullName} />
-              <ReviewCard label="DATE OF BIRTH" value={formData.dateOfBirth} />
-              <ReviewCard label="NATIONALITY" value={formData.nationality} />
-              <ReviewCard label="PASSPORT NUMBER" value={formData.passportNumber} />
+              <ReviewCard label={t("student.review.fullName")} value={formData.fullName} t={t} />
+              <ReviewCard label={t("student.review.dateOfBirth")} value={formData.dateOfBirth} t={t} />
+              <ReviewCard label={t("student.review.nationality")} value={formData.nationality} t={t} />
+              <ReviewCard label={t("student.review.passportNumber")} value={formData.passportNumber} t={t} />
             </ReviewGrid>
           </ReviewSection>
 
-          <ReviewSection title="B. ACADEMIC INFORMATION">
+          <ReviewSection title={t("student.newApplication.academicInfo")}>
             <ReviewGrid>
               <ReviewCard
-                label="HIGHEST QUALIFICATION"
+                label={t("student.review.highestQualification")}
                 value={formData.highestQualification}
+                t={t}
               />
               <ReviewCard
-                label="INSTITUTION NAME"
+                label={t("student.review.institutionName")}
                 value={formData.institutionName}
+                t={t}
               />
               <ReviewCard
-                label="GRADUATION YEAR"
+                label={t("student.review.graduationYear")}
                 value={formData.graduationYear}
+                t={t}
               />
-              <ReviewCard label="GPA/GRADE" value={formData.gpaGrade} />
+              <ReviewCard label={t("student.review.gpaGrade")} value={formData.gpaGrade} t={t} />
             </ReviewGrid>
           </ReviewSection>
 
-          <ReviewSection title="C. COURSE INFORMATION">
+          <ReviewSection title={t("student.newApplication.courseInfo")}>
             <ReviewGrid>
               <ReviewCard
-                label="SELECTED UNIVERSITY"
+                label={t("student.review.selectedUniversity")}
                 value={formData.selectedUniversity}
+                t={t}
               />
-              <ReviewCard label="COURSE NAME" value={formData.courseName} />
+              <ReviewCard label={t("student.review.courseName")} value={formData.courseName} t={t} />
               <ReviewCard
-                label="INTENDED INTAKE"
+                label={t("student.review.intendedIntake")}
                 value={formData.intendedIntake}
+                t={t}
               />
             </ReviewGrid>
           </ReviewSection>
 
-          <ReviewSection title="D. UPLOADED DOCUMENTS">
-            <DocumentRow label="A. PASSPORT COPY" document={documents.passport} />
+          <ReviewSection title={t("student.application.uploadedDocs")}>
+            <DocumentRow label={t("student.documents.passport")} document={documents.passport} t={t} />
             <DocumentRow
-              label="B. ACADEMIC TRANSCRIPTS"
+              label={t("student.documents.transcript")}
               document={documents.transcript}
+              t={t}
             />
-            <DocumentRow label="C. CERTIFICATES" document={documents.certificates} />
+            <DocumentRow label={t("student.documents.certificates")} document={documents.certificates} t={t} />
             <DocumentRow
-              label="D. ENGLISH LANGUAGE TEST"
+              label={t("student.documents.englishTest")}
               document={documents.englishTest}
+              t={t}
             />
           </ReviewSection>
 
@@ -289,13 +279,13 @@ export default function ReviewApplicationPage() {
             />
 
             <span>
-              I confirm that the information provided is accurate and complete.
+              {t("student.review.confirm")}
             </span>
           </div>
 
           <div style={buttonRowStyle}>
             <button type="button" style={secondaryButtonStyle} onClick={handleBack}>
-              BACK
+              {t("student.documents.back")}
             </button>
 
             <div style={rightButtonGroupStyle}>
@@ -305,7 +295,7 @@ export default function ReviewApplicationPage() {
                 onClick={handleSaveDraft}
                 disabled={submitting}
               >
-                SAVE AS DRAFT
+                {t("student.newApplication.saveAsDraft")}
               </button>
 
               <button
@@ -318,7 +308,7 @@ export default function ReviewApplicationPage() {
                 onClick={handleSubmitApplication}
                 disabled={submitting}
               >
-                {submitting ? "SUBMITTING..." : "SUBMIT APPLICATION"}
+                {submitting ? t("student.review.saving") : t("student.review.proceedToPayment")}
               </button>
             </div>
           </div>
@@ -352,16 +342,16 @@ function ReviewGrid({ children }) {
   return <div style={reviewGridStyle}>{children}</div>;
 }
 
-function ReviewCard({ label, value }) {
+function ReviewCard({ label, value, t }) {
   return (
     <div style={reviewCardStyle}>
       <p style={reviewLabelStyle}>{label}</p>
-      <p style={reviewValueStyle}>{value || "Not provided"}</p>
+      <p style={reviewValueStyle}>{value || t("student.application.notProvided")}</p>
     </div>
   );
 }
 
-function DocumentRow({ label, document }) {
+function DocumentRow({ label, document, t }) {
   const uploaded = Boolean(document?.name);
 
   return (
@@ -370,14 +360,14 @@ function DocumentRow({ label, document }) {
         <p style={documentLabelStyle}>{label}</p>
 
         <p style={documentNameStyle}>
-          {uploaded ? document.name : "No file selected"}
+          {uploaded ? document.name : t("student.application.noFile")}
         </p>
 
         {uploaded && <p style={documentSizeStyle}>{formatFileSize(document.size)}</p>}
       </div>
 
       <strong style={uploaded ? uploadedStatusStyle : notUploadedStatusStyle}>
-        {uploaded ? "UPLOADED" : "NOT UPLOADED"}
+        {uploaded ? t("student.documents.uploaded") : t("student.application.notUploaded")}
       </strong>
     </div>
   );

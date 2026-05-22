@@ -1,6 +1,7 @@
+// student documents checklist
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
@@ -13,163 +14,109 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
-
-const STUDENT_DOCUMENTS_STORAGE_KEY = "uaams_student_uploaded_documents";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const ACCEPTED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const DOCUMENT_TYPES = [
-  {
-    key: "passport",
-    label: "A. PASSPORT COPY*",
-  },
-  {
-    key: "transcript",
-    label: "B. ACADEMIC TRANSCRIPTS*",
-  },
-  {
-    key: "certificates",
-    label: "C. CERTIFICATES*",
-  },
-  {
-    key: "englishTest",
-    label: "D. ENGLISH LANGUAGE TEST*",
-  },
+  { key: "passport",        label: "Passport / ID Document" },
+  { key: "transcript",      label: "Academic Transcript" },
+  { key: "certificates",    label: "Qualifications / Certificates" },
+  { key: "englishTest",     label: "English Language Test Result (IELTS / TOEFL)" },
 ];
 
 export default function StudentDocumentsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
-  const [student, setStudent] = useState(null);
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  const [documents, setDocuments] = useState({});
-  const [uploadErrors, setUploadErrors] = useState({});
+  const [firebaseUser, setFirebaseUser]           = useState(null);
+  const [student, setStudent]                     = useState(null);
+  const [checked, setChecked]                     = useState({});
   const [applicationDocumentId, setApplicationDocumentId] = useState("");
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setSLoading]   = useState(true);
+  const [saving, setSaving]      = useState(false);
+  const [errorMessage, setError] = useState("");
+  const [successMessage, setOk]  = useState("");
 
   useEffect(() => {
     const auth = getFirebaseAuth();
-    const db = getFirestoreDb();
+    const db   = getFirestoreDb();
 
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (!currentUser) {
-        router.replace("/");
-        return;
-      }
+    const unsub = onAuthStateChanged(auth, async (cu) => {
+      if (!cu) { router.replace("/"); return; }
 
       try {
-        setFirebaseUser(currentUser);
+        setFirebaseUser(cu);
 
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
+        const snap = await getDoc(doc(db, "users", cu.uid));
+        if (!snap.exists()) { setSLoading(false); return; }
 
-        if (!userSnap.exists()) {
-          setErrorMessage("Student profile not found.");
-          setLoading(false);
-          return;
-        }
-
-        const userData = userSnap.data();
-        const role = String(userData?.role || "").trim().toLowerCase();
-
-        if (role !== "student") {
+        const data = snap.data();
+        if (String(data?.role || "").trim().toLowerCase() !== "student") {
           router.replace("/admin");
           return;
         }
+        setStudent(data);
 
-        setStudent(userData);
+        // Load previously saved document status
+        const saved = await getDoc(doc(db, "studentDocuments", cu.uid));
+        if (saved.exists()) {
+          const docs = saved.data()?.documents || {};
+          // Convert stored format → simple checked map
+          const initial = {};
+          DOCUMENT_TYPES.forEach(({ key }) => {
+            initial[key] = !!(docs[key]?.provided || docs[key]?.name);
+          });
+          setChecked(initial);
+        }
 
-        const savedDocuments = await loadSavedDocuments(db, currentUser.uid);
-        setDocuments(savedDocuments);
-
-        const latestApplicationId = await getLatestApplicationDocumentId(
-          db,
-          currentUser
+        // Find latest application for redirect after save
+        const appsSnap = await getDocs(
+          query(collection(db, "applications"), where("studentId", "==", cu.uid))
         );
-
-        setApplicationDocumentId(latestApplicationId);
-
-        setLoading(false);
-      } catch (error) {
-        console.error("Documents page error:", error);
-        setErrorMessage("Unable to load documents page.");
-        setLoading(false);
+        if (!appsSnap.empty) {
+          const sorted = appsSnap.docs
+            .map((d) => ({ id: d.id, t: d.data()?.createdAt?.toMillis?.() || 0 }))
+            .sort((a, b) => b.t - a.t);
+          setApplicationDocumentId(sorted[0].id);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Unable to load your document records.");
+      } finally {
+        setSLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => unsub();
   }, [router]);
 
-  const handleLogout = async () => {
-    const auth = getFirebaseAuth();
-    await signOut(auth);
-    router.replace("/");
-  };
+  const toggle = (key) =>
+    setChecked((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const handleFileSelected = (documentKey, file) => {
-    if (!file) return;
-
-    const validationError = validateFile(file);
-
-    if (validationError) {
-      setUploadErrors((previousErrors) => ({
-        ...previousErrors,
-        [documentKey]: validationError,
-      }));
-
-      return;
-    }
-
-    const documentData = {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: file.lastModified,
-      uploadedAt: new Date().toISOString(),
-    };
-
-    setDocuments((previousDocuments) => ({
-      ...previousDocuments,
-      [documentKey]: documentData,
-    }));
-
-    setUploadErrors((previousErrors) => ({
-      ...previousErrors,
-      [documentKey]: "",
-    }));
-
-    setErrorMessage("");
-    setSuccessMessage("");
-  };
-
-  const handleSaveDocuments = async () => {
+  const handleSave = async () => {
     if (!firebaseUser) return;
+    setSaving(true);
+    setError("");
+    setOk("");
 
     try {
-      setSaving(true);
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      localStorage.setItem(
-        STUDENT_DOCUMENTS_STORAGE_KEY,
-        JSON.stringify(documents)
-      );
-
       const db = getFirestoreDb();
+
+      // Build documents map — each key gets a simple {provided, markedAt} record
+      const documents = {};
+      DOCUMENT_TYPES.forEach(({ key }) => {
+        documents[key] = {
+          provided:  !!checked[key],
+          markedAt:  checked[key] ? new Date().toISOString() : null,
+        };
+      });
 
       await setDoc(
         doc(db, "studentDocuments", firebaseUser.uid),
         {
-          studentId: firebaseUser.uid,
+          studentId:    firebaseUser.uid,
           studentEmail: firebaseUser.email || student?.email || "",
           documents,
           updatedAt: serverTimestamp(),
@@ -177,120 +124,134 @@ export default function StudentDocumentsPage() {
         { merge: true }
       );
 
-      setSuccessMessage("Documents saved successfully.");
+      setOk(t("student.documents.savedSuccess") || "Documents saved successfully.");
 
-      const redirectApplicationId =
-        applicationDocumentId ||
-        (await getLatestApplicationDocumentId(db, firebaseUser));
-
-      if (redirectApplicationId) {
-        router.push(
-          `/student/application/${encodeURIComponent(redirectApplicationId)}`
-        );
+      if (applicationDocumentId) {
+        router.push(`/student/application/${encodeURIComponent(applicationDocumentId)}`);
       } else {
         router.push("/student");
       }
-    } catch (error) {
-      console.error("Save documents error:", error);
-      setErrorMessage("Unable to save documents.");
+    } catch (err) {
+      console.error(err);
+      setError(t("student.documents.errorUnableToSave") || "Unable to save. Please try again.");
     } finally {
       setSaving(false);
     }
   };
 
+  const handleLogout = async () => {
+    await signOut(getFirebaseAuth());
+    router.replace("/");
+  };
+
   if (loading) {
     return (
       <main style={pageStyle}>
-        <div style={loadingBoxStyle}>Loading documents...</div>
+        <p style={{ textAlign: "center", marginTop: "120px", fontSize: "26px", fontWeight: 900 }}>
+          {t("student.documents.loading") || "Loading…"}
+        </p>
       </main>
     );
   }
 
+  const allChecked = DOCUMENT_TYPES.every(({ key }) => checked[key]);
+
   return (
     <main style={pageStyle}>
       <div style={frameStyle}>
+        {/* ── Header ── */}
         <header style={headerStyle}>
           <div>
             <h1 style={logoStyle}>UAAMS</h1>
-            <p style={subtitleStyle}>
-              University Administration & Application
-              <br />
-              Management System
-            </p>
+            <p style={subtitleStyle}>University Administration &amp; Application Management System</p>
           </div>
-
-          <nav style={topNavStyle}>
-            
-
-            <button type="button" style={navButtonStyle} onClick={handleLogout}>
-              LOGOUT
+          <nav style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+            <LanguageSwitcher />
+            <button type="button" style={navBtnStyle} onClick={handleLogout}>
+              {t("nav.logout")}
             </button>
           </nav>
         </header>
 
-        <section style={titleBarStyle}>
-          <button
-            type="button"
-            style={backDashboardButtonStyle}
-            onClick={() => router.push("/student")}
-          >
-            BACK TO DASHBOARD
+        {/* ── Title bar ── */}
+        <div style={titleBarStyle}>
+          <button type="button" style={backBtnStyle} onClick={() => router.push("/student")}>
+            {t("student.application.backToDashboard") || "Back to Dashboard"}
           </button>
-
-          <div style={titleTextWrapperStyle}>
-            <h2 style={pageTitleStyle}>UPLOAD DOCUMENTS</h2>
-            <p style={pageSubtitleStyle}>
-              UPLOAD AND MANAGE YOUR APPLICATION DOCUMENTS.
+          <div style={{ textAlign: "center" }}>
+            <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 900 }}>
+              {t("student.documents.title") || "Supporting Documents"}
+            </h2>
+            <p style={{ margin: "6px 0 0", fontSize: "13px", fontWeight: 800 }}>
+              {t("student.documents.docsSubtitle") || "Confirm which documents you have ready for your application"}
             </p>
           </div>
-        </section>
+          <div />
+        </div>
 
-        <section style={documentsBoxStyle}>
-          <div style={requirementsBoxStyle}>
-            <h3 style={requirementsTitleStyle}>FILE REQUIREMENTS</h3>
-            <p style={requirementsTextStyle}>ACCEPTED FORMATS</p>
-            <p style={requirementsTextStyle}>PDF, JPG, PNG</p>
-            <p style={requirementsTextStyle}>MAX FILE SIZE</p>
-            <p style={requirementsTextStyle}>
-              ALL DOCUMENTS MUST BE CLEAR AND READABLE
+        {/* ── Main card ── */}
+        <section style={cardStyle}>
+          {/* Info box */}
+          <div style={infoBoxStyle}>
+            <p style={{ margin: 0, fontSize: "14px", fontWeight: 800 }}>
+              Please tick each document you have ready to submit with your application.
+              You will need to bring physical or digital copies when requested by the university.
             </p>
           </div>
 
-          {DOCUMENT_TYPES.map((documentType) => (
-            <DocumentUploadRow
-              key={documentType.key}
-              label={documentType.label}
-              documentData={documents[documentType.key]}
-              errorMessage={uploadErrors[documentType.key]}
-              onFileSelected={(file) =>
-                handleFileSelected(documentType.key, file)
-              }
-            />
-          ))}
+          {/* Checklist */}
+          <div style={{ marginTop: "28px" }}>
+            {DOCUMENT_TYPES.map(({ key, label }) => (
+              <div
+                key={key}
+                style={{
+                  ...rowStyle,
+                  background: checked[key] ? "#e6f4ea" : "#fff",
+                  borderColor: checked[key] ? "#48A111" : "#000",
+                }}
+                onClick={() => toggle(key)}
+              >
+                <div style={checkboxStyle(checked[key])}>
+                  {checked[key] && <span style={{ color: "#fff", fontSize: "16px", lineHeight: 1 }}>✓</span>}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: "16px", fontWeight: 900 }}>{label}</p>
+                  {checked[key] && (
+                    <p style={{ margin: "4px 0 0", fontSize: "12px", fontWeight: 800, color: "#48A111" }}>
+                      Marked as ready
+                    </p>
+                  )}
+                </div>
+                <span style={{ fontSize: "13px", fontWeight: 800, color: checked[key] ? "#48A111" : "#888" }}>
+                  {checked[key] ? "READY" : "NOT MARKED"}
+                </span>
+              </div>
+            ))}
+          </div>
 
-          {errorMessage && <p style={errorTextStyle}>{errorMessage}</p>}
-          {successMessage && <p style={successTextStyle}>{successMessage}</p>}
+          {/* Progress note */}
+          <p style={{ marginTop: "20px", fontSize: "13px", fontWeight: 800, color: "#555" }}>
+            {DOCUMENT_TYPES.filter(({ key }) => checked[key]).length} of {DOCUMENT_TYPES.length} documents marked ready
+            {allChecked && " — all documents confirmed ✓"}
+          </p>
 
-          <div style={buttonRowStyle}>
-            <button
-              type="button"
-              style={secondaryButtonStyle}
-              onClick={() => router.push("/student")}
-            >
-              BACK
+          {errorMessage   && <p style={{ color: "red",   fontWeight: 800, marginTop: "16px" }}>{errorMessage}</p>}
+          {successMessage && <p style={{ color: "green", fontWeight: 800, marginTop: "16px" }}>{successMessage}</p>}
+
+          {/* Buttons */}
+          <div style={{ marginTop: "32px", display: "flex", justifyContent: "space-between" }}>
+            <button type="button" style={secondaryBtnStyle} onClick={() => router.push("/student")}>
+              {t("student.documents.back") || "Back"}
             </button>
-
             <button
               type="button"
-              style={{
-                ...primaryButtonStyle,
-                opacity: saving ? 0.7 : 1,
-                cursor: saving ? "not-allowed" : "pointer",
-              }}
-              onClick={handleSaveDocuments}
+              style={{ ...primaryBtnStyle, opacity: saving ? 0.7 : 1, cursor: saving ? "not-allowed" : "pointer" }}
+              onClick={handleSave}
               disabled={saving}
             >
-              {saving ? "SAVING..." : "SAVE DOCUMENTS"}
+              {saving
+                ? (t("student.documents.saving") || "Saving…")
+                : (t("student.documents.saveDocuments") || "Save & Continue")}
             </button>
           </div>
         </section>
@@ -299,412 +260,17 @@ export default function StudentDocumentsPage() {
   );
 }
 
-function DocumentUploadRow({
-  label,
-  documentData,
-  errorMessage,
-  onFileSelected,
-}) {
-  const fileInputRef = useRef(null);
-
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleChange = (event) => {
-    const file = event.target.files?.[0];
-    onFileSelected(file);
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-
-    const file = event.dataTransfer.files?.[0];
-    onFileSelected(file);
-  };
-
-  return (
-    <section style={documentGroupStyle}>
-      <h3 style={documentLabelStyle}>{label}</h3>
-
-      <div
-        style={dropZoneStyle}
-        onClick={handleClick}
-        onDrop={handleDrop}
-        onDragOver={(event) => event.preventDefault()}
-      >
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          onChange={handleChange}
-          style={{ display: "none" }}
-        />
-
-        <div style={uploadIconStyle}>☁</div>
-
-        <p style={dropTextStyle}>
-          {documentData?.name
-            ? "CLICK TO REPLACE DOCUMENT OR DRAG & DROP"
-            : "CLICK TO UPLOAD OR DRAG & DROP"}
-        </p>
-
-        <p style={dropHelpTextStyle}>
-          ACCEPTED FORMATS : PDF, JPG, PNG | MAX SIZE: 5MB
-        </p>
-
-        {documentData?.name && (
-          <div style={uploadedFileStyle}>
-            <span>{documentData.name}</span>
-            <span>{formatFileSize(documentData.size)}</span>
-            <strong style={uploadedStatusStyle}>UPLOADED</strong>
-          </div>
-        )}
-      </div>
-
-      {errorMessage && <p style={uploadErrorStyle}>{errorMessage}</p>}
-    </section>
-  );
-}
-
-async function getLatestApplicationDocumentId(db, firebaseUser) {
-  const applicationsRef = collection(db, "applications");
-
-  const applicationsQuery = query(
-    applicationsRef,
-    where("studentId", "==", firebaseUser.uid)
-  );
-
-  const querySnapshot = await getDocs(applicationsQuery);
-
-  if (querySnapshot.empty) {
-    return "";
-  }
-
-  const applications = querySnapshot.docs.map((applicationDoc) => {
-    const data = applicationDoc.data();
-
-    return {
-      documentId: applicationDoc.id,
-      rawCreatedAt:
-        data?.createdAt ||
-        data?.submittedAt ||
-        data?.updatedAt ||
-        null,
-    };
-  });
-
-  applications.sort((a, b) => {
-    return getFirestoreDateTime(b.rawCreatedAt) - getFirestoreDateTime(a.rawCreatedAt);
-  });
-
-  return applications[0]?.documentId || "";
-}
-
-async function loadSavedDocuments(db, studentId) {
-  const documentsRef = doc(db, "studentDocuments", studentId);
-  const documentsSnap = await getDoc(documentsRef);
-
-  if (documentsSnap.exists()) {
-    return documentsSnap.data()?.documents || {};
-  }
-
-  const savedLocalDocuments = localStorage.getItem(
-    STUDENT_DOCUMENTS_STORAGE_KEY
-  );
-
-  if (savedLocalDocuments) {
-    try {
-      return JSON.parse(savedLocalDocuments);
-    } catch {
-      return {};
-    }
-  }
-
-  return {};
-}
-
-function validateFile(file) {
-  if (!file) return "Please select a file.";
-
-  if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
-    return "Invalid file type. Please upload PDF, JPG or PNG.";
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return "File is too large. Maximum size is 5MB.";
-  }
-
-  return "";
-}
-
-function formatFileSize(size) {
-  if (!size) return "";
-
-  const sizeInKb = size / 1024;
-
-  if (sizeInKb < 1024) {
-    return `${sizeInKb.toFixed(1)} KB`;
-  }
-
-  return `${(sizeInKb / 1024).toFixed(1)} MB`;
-}
-
-function getFirestoreDateTime(value) {
-  if (!value) return 0;
-
-  if (value?.toDate) {
-    return value.toDate().getTime();
-  }
-
-  const dateValue = new Date(value).getTime();
-
-  return Number.isNaN(dateValue) ? 0 : dateValue;
-}
-
-const pageStyle = {
-  minHeight: "100vh",
-  width: "100%",
-  background: "#F7F1E8",
-  padding: "10px",
-  fontFamily: "Arial, Helvetica, sans-serif",
-  color: "#071126",
-  boxSizing: "border-box",
-};
-
-const frameStyle = {
-  minHeight: "calc(100vh - 20px)",
-  width: "100%",
-
-  background: "#F7F1E8",
-  display: "flex",
-  flexDirection: "column",
-};
-
-const headerStyle = {
- height: "95px",
-  width: "100vw",
-  position: "relative",
-  left: "50%",
-  transform: "translateX(-50%)",
-  background: "#fff",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  padding: "0 45px",
-  margin: "0 0 24px",
-  borderBottom: "2px solid #000",
-};
-
-const logoStyle = {
-  margin: 0,
-  fontSize: "48px",
-  fontWeight: "900",
-  lineHeight: "48px",
-};
-
-const subtitleStyle = {
-  margin: "6px 0 0",
-  fontSize: "16px",
-  lineHeight: "20px",
-};
-
-const topNavStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "30px",
-};
-
-const navButtonStyle = {
-  background: "#fff",
-  border: "2px solid #3B2E5A",
-  color: "#3B2E5A",
-  minWidth: "150px",
-  height: "54px",
-  padding: "0 24px",
-  fontSize: "15px",
-  fontWeight: "800",
-  cursor: "pointer",
-};
-
-const titleBarStyle = {
-  width: "100%",
-  maxWidth: "1700px",
-  minHeight: "80px",
-  margin: "30px auto 30px",
-  border: "2px solid #000",
-  display: "grid",
-  gridTemplateColumns: "260px 1fr 260px",
-  alignItems: "center",
-  background: "#fff",
-  boxSizing: "border-box",
-};
-
-const backDashboardButtonStyle = {
-  marginLeft: "30px",
-  width: "200px",
-  height: "46px",
-  background: "#3B2E5A",
-  color: "#fff",
-  border: "none",
-  fontSize: "13px",
-  fontWeight: "800",
-  cursor: "pointer",
-};
-
-const titleTextWrapperStyle = {
-  textAlign: "center",
-};
-
-const pageTitleStyle = {
-  margin: 0,
-  fontSize: "28px",
-  fontWeight: "900",
-};
-
-const pageSubtitleStyle = {
-  margin: "6px 0 0",
-  fontSize: "13px",
-  fontWeight: "800",
-};
-
-const documentsBoxStyle = {
-  width: "100%",
-  maxWidth: "1700px",
-  margin: "0 auto 50px",
-  border: "2px solid #000",
-  background: "#fff",
-  padding: "34px 60px 32px",
-  boxSizing: "border-box",
-};
-
-const requirementsBoxStyle = {
-  background: "#F7F1E8",
-  border: "2px solid #000",
-  padding: "24px 30px",
-  marginBottom: "28px",
-};
-
-const requirementsTitleStyle = {
-  margin: "0 0 10px",
-  fontSize: "18px",
-  fontWeight: "900",
-};
-
-const requirementsTextStyle = {
-  margin: "0 0 6px",
-  fontSize: "14px",
-  fontWeight: "800",
-};
-
-const documentGroupStyle = {
-  marginBottom: "24px",
-};
-
-const documentLabelStyle = {
-  margin: "0 0 10px",
-  fontSize: "16px",
-  fontWeight: "900",
-};
-
-const dropZoneStyle = {
-  minHeight: "135px",
-  border: "2px dashed #000",
-  background: "#F7F1E8",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  cursor: "pointer",
-  padding: "18px",
-};
-
-const uploadIconStyle = {
-  fontSize: "34px",
-  fontWeight: "900",
-  marginBottom: "8px",
-};
-
-const dropTextStyle = {
-  margin: 0,
-  fontSize: "15px",
-  fontWeight: "900",
-};
-
-const dropHelpTextStyle = {
-  margin: "8px 0 0",
-  fontSize: "13px",
-  fontWeight: "800",
-};
-
-const uploadedFileStyle = {
-  marginTop: "14px",
-  width: "100%",
-  maxWidth: "900px",
-  display: "grid",
-  gridTemplateColumns: "1fr 120px 120px",
-  alignItems: "center",
-  gap: "14px",
-  fontSize: "13px",
-  fontWeight: "800",
-};
-
-const uploadedStatusStyle = {
-  color: "green",
-  textAlign: "right",
-};
-
-const uploadErrorStyle = {
-  margin: "8px 0 0",
-  color: "red",
-  fontSize: "13px",
-  fontWeight: "800",
-};
-
-const errorTextStyle = {
-  color: "red",
-  fontSize: "15px",
-  fontWeight: "800",
-};
-
-const successTextStyle = {
-  color: "green",
-  fontSize: "15px",
-  fontWeight: "800",
-};
-
-const buttonRowStyle = {
-  marginTop: "28px",
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const secondaryButtonStyle = {
-  width: "150px",
-  height: "50px",
-  background: "#fff",
-  border: "2px solid #000",
-  fontSize: "14px",
-  fontWeight: "800",
-  cursor: "pointer",
-};
-
-const primaryButtonStyle = {
-  width: "230px",
-  height: "50px",
-  background: "#3B2E5A",
-  border: "2px solid #3B2E5A",
-  color: "#fff",
-  fontSize: "14px",
-  fontWeight: "800",
-};
-
-const loadingBoxStyle = {
-  minHeight: "100vh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "24px",
-  fontWeight: "900",
-};
+const pageStyle       = { minHeight: "100vh", background: "#F7F1E8", fontFamily: "Arial, Helvetica, sans-serif", color: "#071126" };
+const frameStyle      = { width: "100%", padding: "0 40px 60px", boxSizing: "border-box" };
+const headerStyle     = { height: "95px", width: "100vw", position: "relative", left: "50%", transform: "translateX(-50%)", background: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 45px", margin: "0 0 28px", borderBottom: "2px solid #000" };
+const logoStyle       = { margin: 0, fontSize: "48px", fontWeight: 900, lineHeight: "50px" };
+const subtitleStyle   = { margin: "8px 0 0", fontSize: "16px" };
+const navBtnStyle     = { background: "#fff", border: "2px solid #3B2E5A", color: "#3B2E5A", height: "50px", padding: "0 20px", fontSize: "13px", fontWeight: 800, cursor: "pointer" };
+const titleBarStyle   = { width: "100%", maxWidth: "900px", margin: "0 auto 28px", display: "grid", gridTemplateColumns: "200px 1fr 200px", alignItems: "center", background: "#fff", border: "2px solid #000", padding: "16px 24px", boxSizing: "border-box" };
+const backBtnStyle    = { height: "44px", background: "#3B2E5A", color: "#fff", border: "none", fontSize: "13px", fontWeight: 800, cursor: "pointer", padding: "0 16px" };
+const cardStyle       = { width: "100%", maxWidth: "900px", margin: "0 auto", background: "#fff", border: "2px solid #000", padding: "36px", boxSizing: "border-box" };
+const infoBoxStyle    = { background: "#F7F1E8", border: "2px solid #000", padding: "18px 24px" };
+const rowStyle        = { display: "flex", alignItems: "center", gap: "18px", padding: "18px 20px", border: "2px solid #000", marginBottom: "12px", cursor: "pointer", transition: "background 0.15s, border-color 0.15s", userSelect: "none" };
+const checkboxStyle   = (on) => ({ width: "28px", height: "28px", border: `2px solid ${on ? "#48A111" : "#000"}`, background: on ? "#48A111" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.15s" });
+const secondaryBtnStyle = { width: "140px", height: "50px", background: "#fff", border: "2px solid #000", fontSize: "14px", fontWeight: 800, cursor: "pointer" };
+const primaryBtnStyle   = { width: "220px", height: "50px", background: "#3B2E5A", border: "2px solid #3B2E5A", color: "#fff", fontSize: "14px", fontWeight: 800 };

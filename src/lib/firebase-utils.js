@@ -60,6 +60,8 @@ const COLLECTIONS = {
   DOCUMENTS: "documents",
   NOTIFICATIONS: "notifications",
   EMAIL_LOGS: "emailLogs",
+  AGENT_STUDENT_LINKS: "agentStudentLinks",
+  PAYMENTS: "payments",
 };
 
 export async function getUserById(uid) {
@@ -154,7 +156,31 @@ export async function getApplicationById(id) {
     return null;
   }
 
-  return { id: appDoc.id, ...appDoc.data() };
+  const data = appDoc.data();
+
+  // Flatten nested objects written by the agent form so all consumers see flat fields.
+  const personalInfo  = data.personalInfo  || {};
+  const academicInfo  = data.academicInfo  || {};
+  const courseInfo    = data.courseInfo    || {};
+
+  return {
+    id: appDoc.id,
+    ...data,
+    // Personal info — flat wins, nested is fallback
+    fullName:             data.fullName             || `${personalInfo.firstName || ""} ${personalInfo.lastName || ""}`.trim() || null,
+    dateOfBirth:          data.dateOfBirth          || personalInfo.dateOfBirth          || null,
+    nationality:          data.nationality          || personalInfo.nationality          || null,
+    passportNumber:       data.passportNumber       || personalInfo.passportNumber       || null,
+    // Academic info
+    highestQualification: data.highestQualification || academicInfo.highestQualification || null,
+    institutionName:      data.institutionName      || academicInfo.institutionName      || null,
+    graduationYear:       data.graduationYear       || academicInfo.graduationYear       || null,
+    gpaGrade:             data.gpaGrade             || academicInfo.gpaGrade             || null,
+    // Course info
+    courseName:           data.courseName           || courseInfo.courseName             || null,
+    intendedIntake:       data.intendedIntake        || courseInfo.intendedStartDate      || null,
+    universityName:       data.universityName        || data.selectedUniversity          || null,
+  };
 }
 
 export async function getApplicationsForStudent(
@@ -485,6 +511,304 @@ export function subscribeToNotifications(userId, callback) {
 
     callback(notifications);
   });
+}
+
+// ============================================
+// PAYMENT FUNCTIONS
+// ============================================
+
+export async function createPaymentRecord(data) {
+  const db = getFirestoreDb();
+  const paymentRef = doc(collection(db, COLLECTIONS.PAYMENTS));
+
+  await setDoc(paymentRef, {
+    ...data,
+    id: paymentRef.id,
+    status: "pending",
+    createdAt: serverTimestamp(),
+  });
+
+  return paymentRef.id;
+}
+
+export async function getPaymentForApplication(applicationId) {
+  const db = getFirestoreDb();
+
+  const q = query(
+    collection(db, COLLECTIONS.PAYMENTS),
+    where("applicationId", "==", applicationId),
+    orderBy("createdAt", "desc"),
+    limit(1)
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) return null;
+
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+}
+
+export async function markPaymentPaid(paymentId, stripePaymentIntentId) {
+  const db = getFirestoreDb();
+
+  await updateDoc(doc(db, COLLECTIONS.PAYMENTS, paymentId), {
+    status: "paid",
+    stripePaymentIntentId,
+    paidAt: serverTimestamp(),
+  });
+}
+
+export async function setApplicationPaymentStatus(applicationId, paymentStatus) {
+  const db = getFirestoreDb();
+
+  await updateDoc(doc(db, COLLECTIONS.APPLICATIONS, applicationId), {
+    paymentStatus,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function saveDraftAndGetId(applicationData) {
+  const db = getFirestoreDb();
+  const applicationsRef = collection(db, COLLECTIONS.APPLICATIONS);
+  const newDocRef = doc(applicationsRef);
+
+  await setDoc(newDocRef, {
+    ...applicationData,
+    id: newDocRef.id,
+    status: "Draft",
+    applicationStatus: "Draft",
+    paymentStatus: "unpaid",
+    decisionHistory: [],
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  return newDocRef.id;
+}
+
+// ============================================
+// AGENT / COUNSELOR FUNCTIONS
+// ============================================
+
+function generateInviteCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+export async function createAgentInvite(agentUid, agentName, agencyName) {
+  const db = getFirestoreDb();
+  const linkRef = doc(collection(db, COLLECTIONS.AGENT_STUDENT_LINKS));
+  const inviteCode = generateInviteCode();
+
+  await setDoc(linkRef, {
+    id: linkRef.id,
+    agentId: agentUid,
+    agentName,
+    agencyName,
+    studentId: null,
+    studentName: null,
+    studentEmail: null,
+    inviteCode,
+    status: "pending",
+    createdAt: serverTimestamp(),
+    linkedAt: null,
+  });
+
+  return inviteCode;
+}
+
+export async function acceptAgentInvite(studentUid, studentName, studentEmail, inviteCode) {
+  const db = getFirestoreDb();
+
+  const q = query(
+    collection(db, COLLECTIONS.AGENT_STUDENT_LINKS),
+    where("inviteCode", "==", inviteCode.toUpperCase().trim()),
+    where("status", "==", "pending")
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error("Invalid or expired invite code.");
+  }
+
+  const linkDoc = snapshot.docs[0];
+  const agentId = linkDoc.data().agentId;
+
+  await updateDoc(linkDoc.ref, {
+    studentId: studentUid,
+    studentName,
+    studentEmail,
+    status: "active",
+    linkedAt: serverTimestamp(),
+  });
+
+  // Lookup doc (agentId_studentId) is created by ensureAgentLookupDocuments when the
+  // agent next loads their students page. Creating it here would fail because the student
+  // (not the agent) is authenticated, so request.auth.uid != agentId in the create rule.
+
+  return linkDoc.id;
+}
+
+// Creates missing lookup documents for existing active links.
+// Call this once on agent page load to fix links created before the lookup doc pattern.
+export async function ensureAgentLookupDocuments(agentUid) {
+  const db = getFirestoreDb();
+
+  const q = query(
+    collection(db, COLLECTIONS.AGENT_STUDENT_LINKS),
+    where("agentId", "==", agentUid),
+    where("status", "==", "active")
+  );
+
+  const snapshot = await getDocs(q);
+
+  const writes = [];
+  for (const snap of snapshot.docs) {
+    const data = snap.data();
+    if (!data.studentId || data.type === "lookup") continue;
+
+    const lookupRef = doc(db, COLLECTIONS.AGENT_STUDENT_LINKS, `${agentUid}_${data.studentId}`);
+    // Always setDoc — create if missing, overwrite if already exists (idempotent).
+    writes.push(setDoc(lookupRef, {
+      agentId: agentUid,
+      studentId: data.studentId,
+      studentName: data.studentName || null,
+      studentEmail: data.studentEmail || null,
+      status: "active",
+      type: "lookup",
+      linkedAt: data.linkedAt || serverTimestamp(),
+    }));
+  }
+
+  await Promise.all(writes);
+}
+
+export async function getLinksForAgent(agentUid) {
+  const db = getFirestoreDb();
+
+  const q = query(
+    collection(db, COLLECTIONS.AGENT_STUDENT_LINKS),
+    where("agentId", "==", agentUid),
+    where("status", "in", ["active", "pending"])
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  }));
+}
+
+export async function getActiveLinksForAgent(agentUid) {
+  const db = getFirestoreDb();
+
+  const q = query(
+    collection(db, COLLECTIONS.AGENT_STUDENT_LINKS),
+    where("agentId", "==", agentUid),
+    where("status", "==", "active")
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  }));
+}
+
+export async function getLinksForStudent(studentUid) {
+  const db = getFirestoreDb();
+
+  const q = query(
+    collection(db, COLLECTIONS.AGENT_STUDENT_LINKS),
+    where("studentId", "==", studentUid),
+    where("status", "==", "active")
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((docSnap) => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  }));
+}
+
+export async function revokeAgentLink(linkId) {
+  const db = getFirestoreDb();
+
+  await updateDoc(doc(db, COLLECTIONS.AGENT_STUDENT_LINKS, linkId), {
+    status: "revoked",
+  });
+}
+
+export async function getApplicationsForAgent(agentUid) {
+  const db = getFirestoreDb();
+  const results = [];
+  const seenIds = new Set();
+
+  // Query 1: applications the agent directly submitted (submittedByAgent == agentUid)
+  // Rules allow: resource.data.submittedByAgent == request.auth.uid
+  const bySubmitterQuery = query(
+    collection(db, COLLECTIONS.APPLICATIONS),
+    where("submittedByAgent", "==", agentUid),
+    orderBy("createdAt", "desc")
+  );
+  const submitterSnap = await getDocs(bySubmitterQuery);
+  submitterSnap.docs.forEach((docSnap) => {
+    seenIds.add(docSnap.id);
+    results.push({ id: docSnap.id, ...docSnap.data() });
+  });
+
+  // Query 2: applications tagged with agentId field (agent-created apps going forward)
+  // Rules allow: resource.data.get('agentId', '') == request.auth.uid
+  // This query does NOT use orderBy so no composite index is required.
+  const byAgentIdQuery = query(
+    collection(db, COLLECTIONS.APPLICATIONS),
+    where("agentId", "==", agentUid)
+  );
+  const agentIdSnap = await getDocs(byAgentIdQuery);
+  agentIdSnap.docs.forEach((docSnap) => {
+    if (!seenIds.has(docSnap.id)) {
+      seenIds.add(docSnap.id);
+      results.push({ id: docSnap.id, ...docSnap.data() });
+    }
+  });
+
+  results.sort((a, b) => {
+    const aTime = a.createdAt?.toDate?.()?.getTime() ?? 0;
+    const bTime = b.createdAt?.toDate?.()?.getTime() ?? 0;
+    return bTime - aTime;
+  });
+
+  return results;
+}
+
+export async function createApplicationForStudent(agentUid, agentName, agencyName, studentId, applicationData) {
+  const db = getFirestoreDb();
+  const applicationsRef = collection(db, COLLECTIONS.APPLICATIONS);
+  const newDocRef = doc(applicationsRef);
+
+  await setDoc(newDocRef, {
+    ...applicationData,
+    id: newDocRef.id,
+    studentId,
+    submittedByAgent: agentUid,
+    agentId: agentUid,
+    agentName,
+    agencyName,
+    status: "Draft",
+    decisionHistory: [],
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+
+  return newDocRef.id;
 }
 
 export async function getApplicationCountsByStatus(universityId) {

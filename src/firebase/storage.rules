@@ -32,6 +32,22 @@ service firebase.storage {
     }
     
     // ============================================
+    // STUDENT DOCUMENTS (passport, transcript, etc.)
+    // ============================================
+    match /students/{userId}/documents/{allPaths=**} {
+      // Authenticated users can read (admins and agents need access too)
+      allow read: if isAuthenticated();
+
+      // Only the owning student can upload
+      allow create, update: if isAuthenticated() &&
+                               request.auth.uid == userId &&
+                               isValidFileSize() &&
+                               isValidDocumentType();
+
+      allow delete: if false;
+    }
+
+    // ============================================
     // USER PROFILE IMAGES
     // ============================================
     match /users/{userId}/profile/{fileName} {

@@ -177,6 +177,7 @@ export function AuthProvider({ children }) {
   // Compute role booleans
   const isStudent = state.userData?.role === 'student';
   const isUniversityAdmin = state.userData?.role === 'university_admin';
+  const isAgent = state.userData?.role === 'agent';
 
   const value = {
     ...state,
@@ -188,6 +189,7 @@ export function AuthProvider({ children }) {
     refreshUserData,
     isStudent,
     isUniversityAdmin,
+    isAgent,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

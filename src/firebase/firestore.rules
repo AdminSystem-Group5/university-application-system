@@ -1,0 +1,321 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isStudent() {
+      return isAuthenticated() && getUserData().role == 'student';
+    }
+
+    function isUniversityAdmin() {
+      return isAuthenticated() && getUserData().role == 'university_admin';
+    }
+
+    function isAgent() {
+      return isAuthenticated() && getUserData().role == 'agent';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdminOfUniversity(universityId) {
+      return isUniversityAdmin() &&
+             request.auth.uid in get(/databases/$(database)/documents/universities/$(universityId)).data.adminIds;
+    }
+
+    // ============================================
+    // DENY BY DEFAULT
+    // ============================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own profile (direct UID check — no getUserData() call).
+      allow read: if isOwner(userId);
+      // University admins can read any user profile.
+      allow read: if isAuthenticated() && getUserData().role == 'university_admin';
+      // Agents deal with student data so any agent can read user profiles.
+      allow read: if isAgent();
+
+      // Users can create their own profile during registration.
+      allow create: if isAuthenticated() &&
+                       request.auth.uid == userId;
+
+      // Users can update their own profile.
+      // Email and createdAt are immutable.
+      // Role is immutable once set; if role is currently missing it can be set (repair mode).
+      allow update: if isOwner(userId) &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email', 'createdAt']) &&
+                       (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+                        resource.data.get('role', '') == '');
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // UNIVERSITIES COLLECTION
+    // ============================================
+    match /universities/{universityId} {
+      // Anyone authenticated can read university info (for dropdowns, etc.)
+      allow read: if isAuthenticated();
+
+      // Only admins of the university can update
+      allow update: if isAdminOfUniversity(universityId);
+
+      allow create, delete: if false;
+    }
+
+    // ============================================
+    // COURSES COLLECTION
+    // ============================================
+    match /courses/{courseId} {
+      // Any authenticated user can read courses (for dropdowns in application forms)
+      allow read: if isAuthenticated();
+
+      // University admins can create and update courses for their university
+      allow create, update: if isUniversityAdmin();
+      allow delete: if false;
+    }
+
+    // ============================================
+    // APPLICATIONS COLLECTION
+    // ============================================
+    match /applications/{applicationId} {
+      // Split into separate allow read rules so Firestore evaluates each independently.
+      // This prevents the resource-dependent get() in isAdminOfUniversity from
+      // blocking agent/student queries via failed short-circuit evaluation.
+      allow read: if isOwner(resource.data.studentId);
+      allow read: if isAuthenticated() && resource.data.submittedByAgent == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.get('agentId', '') == request.auth.uid;
+      // Role-based read for collection queries (isAdminOfUniversity uses get() and cannot be
+      // used in collection-wide queries — isUniversityAdmin() is the safe fallback).
+      allow read: if isUniversityAdmin();
+      allow read: if isAdminOfUniversity(resource.data.universityId);
+      // Agents can read applications for linked students — uses lookup doc (agentId_studentId).
+      allow read: if isAgent() && exists(/databases/$(database)/documents/agentStudentLinks/$(request.auth.uid + '_' + resource.data.studentId));
+
+      // Students can create applications for themselves.
+      // Agents can create applications for linked students.
+      allow create: if (
+        (isStudent() &&
+         request.resource.data.studentId == request.auth.uid &&
+         request.resource.data.status == 'Draft') ||
+        (isAgent() &&
+         request.resource.data.submittedByAgent == request.auth.uid &&
+         request.resource.data.status == 'Draft')
+      );
+
+      allow update: if (
+        // Students can update their own DRAFT applications
+        (isOwner(resource.data.studentId) &&
+         resource.data.status == 'Draft' &&
+         (request.resource.data.status == 'Draft' || request.resource.data.status == 'Submitted')) ||
+
+        // Students can withdraw their non-final applications
+        (isOwner(resource.data.studentId) &&
+         resource.data.status in ['Draft', 'Submitted', 'Under Review', 'Offered'] &&
+         request.resource.data.status == 'Withdrawn') ||
+
+        // Students/agents can update paymentStatus and aiScreening (set on payment success page)
+        (isAuthenticated() &&
+         isOwner(resource.data.studentId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paymentStatus', 'aiScreening', 'updatedAt'])) ||
+
+        // Agents can update Draft applications they created
+        (isAgent() &&
+         resource.data.submittedByAgent == request.auth.uid &&
+         resource.data.status == 'Draft') ||
+
+        // Admins can update any application (role-only check — avoids cross-doc lookup failing on queries)
+        isUniversityAdmin() ||
+
+        // Fine-grained: admins of the specific university can also update
+        (isAdminOfUniversity(resource.data.universityId))
+      );
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // DECISION HISTORY SUBCOLLECTION
+    // ============================================
+    match /applications/{applicationId}/decisionHistory/{historyId} {
+      // Readable by application owner and university admins
+      allow read: if isUniversityAdmin();
+      allow read: if isAuthenticated() &&
+                     isOwner(get(/databases/$(database)/documents/applications/$(applicationId)).data.studentId);
+      allow read: if isAuthenticated() &&
+                     exists(/databases/$(database)/documents/agentStudentLinks/$(request.auth.uid + '_' +
+                       get(/databases/$(database)/documents/applications/$(applicationId)).data.studentId));
+
+      // Only admins can create decision history entries
+      allow create: if isUniversityAdmin() &&
+                       request.resource.data.changedBy == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['status', 'changedBy', 'changedAt', 'previousStatus']);
+
+      // Decision history is immutable
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // NOTES SUBCOLLECTION
+    // ============================================
+    match /applications/{applicationId}/notes/{noteId} {
+      // Admins can read all notes; the application owner (student) can also read
+      allow read: if isUniversityAdmin();
+      allow read: if isAuthenticated() &&
+                     isOwner(get(/databases/$(database)/documents/applications/$(applicationId)).data.studentId);
+
+      // Only admins can create notes
+      allow create: if isUniversityAdmin() &&
+                       request.resource.data.adminId == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['adminId', 'adminName', 'noteText', 'createdAt']);
+
+      // Admins can edit their own notes
+      allow update: if isUniversityAdmin() &&
+                       resource.data.adminId == request.auth.uid &&
+                       !request.resource.data.diff(resource.data).affectedKeys().hasAny(['adminId', 'createdAt']);
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // AGENT STUDENT LINKS COLLECTION
+    // ============================================
+    match /agentStudentLinks/{linkId} {
+      // Use direct UID field comparisons instead of isAgent()/isStudent() role lookups.
+      // Split into separate rules so each OR branch is evaluated independently by Firestore.
+      allow read: if isAuthenticated() && resource.data.agentId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.studentId == request.auth.uid;
+      // Pending invites must be readable by any authenticated user so students can
+      // look up an invite by code before their studentId is written to the document.
+      allow read: if isAuthenticated() && resource.data.status == 'pending';
+
+      // Agents can create invite links (pending) or lookup documents (active, type=lookup).
+      allow create: if isAuthenticated() &&
+                       request.resource.data.agentId == request.auth.uid &&
+                       request.resource.data.status in ['pending', 'active'];
+
+      // Students can accept pending invites; agents and students can revoke links.
+      allow update: if isAuthenticated() && (
+        // Student accepting invite
+        (resource.data.status == 'pending' &&
+         request.resource.data.status == 'active' &&
+         request.resource.data.studentId == request.auth.uid) ||
+        // Agent can update/overwrite their own documents (includes refreshing lookup docs)
+        (resource.data.agentId == request.auth.uid &&
+         request.resource.data.agentId == request.auth.uid) ||
+        // Student revoking
+        (resource.data.studentId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+      );
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // DOCUMENTS COLLECTION (Supporting Documents)
+    // ============================================
+    match /documents/{documentId} {
+      allow read: if isAuthenticated() && (
+        isOwner(get(/databases/$(database)/documents/applications/$(resource.data.applicationId)).data.studentId) ||
+        isUniversityAdmin() ||
+        isAdminOfUniversity(get(/databases/$(database)/documents/applications/$(resource.data.applicationId)).data.universityId)
+      );
+
+      // Students can upload documents for their own applications
+      allow create: if isStudent() &&
+                       request.resource.data.uploadedBy == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['applicationId', 'fileType', 'fileName', 'fileUrl', 'uploadedAt']) &&
+                       request.resource.data.fileType in ['transcript', 'passport', 'personalStatement', 'reference', 'other'];
+
+      // Students can update their own documents (before submission)
+      allow update: if isOwner(resource.data.uploadedBy) &&
+                       get(/databases/$(database)/documents/applications/$(resource.data.applicationId)).data.status == 'Draft';
+
+      // Admins can verify documents
+      allow update: if isAdminOfUniversity(
+                         get(/databases/$(database)/documents/applications/$(resource.data.applicationId)).data.universityId
+                       ) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verified', 'verifiedAt', 'verifiedBy']);
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // STUDENT DOCUMENTS COLLECTION
+    // ============================================
+    match /studentDocuments/{studentId} {
+      // Students can read and write their own document record
+      allow read, write: if isAuthenticated() && request.auth.uid == studentId;
+      // Admins can read any student document record
+      allow read: if isUniversityAdmin();
+      // Agents can read documents for their linked students
+      allow read: if isAuthenticated() &&
+                     exists(/databases/$(database)/documents/agentStudentLinks/$(request.auth.uid + '_' + studentId));
+    }
+
+    // ============================================
+    // NOTIFICATIONS COLLECTION
+    // ============================================
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isOwner(resource.data.userId);
+
+      // Authenticated users can create notifications (via client SDK in status update transactions)
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasAll(['userId', 'type', 'title', 'message', 'read', 'createdAt']);
+
+      // Users can mark their notifications as read
+      allow update: if isOwner(resource.data.userId) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // PAYMENTS COLLECTION
+    // ============================================
+    match /payments/{paymentId} {
+      // Students can read their own payment records; admins can read any
+      allow read: if isAuthenticated() && resource.data.studentId == request.auth.uid;
+      allow read: if isUniversityAdmin();
+
+      // Students and agents can create payment records from the client
+      allow create: if isAuthenticated() &&
+                       request.resource.data.keys().hasAll(['applicationId', 'studentId', 'status', 'createdAt']);
+
+      // Students can update their own payment record (e.g. marking paid on success page)
+      allow update: if isAuthenticated() && resource.data.studentId == request.auth.uid;
+
+      allow delete: if false;
+    }
+
+    // ============================================
+    // EMAIL LOGS COLLECTION (Audit Trail)
+    // ============================================
+    match /emailLogs/{logId} {
+      // Only admins can read email logs
+      allow read: if isUniversityAdmin();
+
+      // Created by Cloud Functions / server-side only
+      allow create, update, delete: if false;
+    }
+  }
+}

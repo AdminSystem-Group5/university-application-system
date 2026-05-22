@@ -1,3 +1,4 @@
+// student application detail view
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,10 +7,13 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function ApplicationDetailsPage() {
   const router = useRouter();
   const params = useParams();
+  const { t } = useLanguage();
 
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -54,6 +58,13 @@ export default function ApplicationDetailsPage() {
 
         const applicationData = applicationSnap.data();
 
+        // Load document status from studentDocuments collection (saved by documents page)
+        const studentDocsSnap = await getDoc(doc(db, "studentDocuments", firebaseUser.uid));
+        if (studentDocsSnap.exists()) {
+          const savedDocs = studentDocsSnap.data()?.documents || {};
+          applicationData._studentDocuments = savedDocs;
+        }
+
         const belongsToStudent =
           applicationData?.studentId === firebaseUser.uid ||
           applicationData?.studentUid === firebaseUser.uid ||
@@ -90,7 +101,7 @@ export default function ApplicationDetailsPage() {
     return (
       <main style={pageStyle}>
         <div style={frameStyle}>
-          <h1 style={loadingTextStyle}>Loading application details...</h1>
+          <h1 style={loadingTextStyle}>{t("student.application.loading")}</h1>
         </div>
       </main>
     );
@@ -108,10 +119,10 @@ export default function ApplicationDetailsPage() {
               style={backDashboardButtonStyle}
               onClick={() => router.push("/student")}
             >
-              BACK TO DASHBOARD
+              {t("student.application.backToDashboard")}
             </button>
 
-            <h2 style={pageTitleStyle}>APPLICATIONS DETAILS</h2>
+            <h2 style={pageTitleStyle}>{t("student.application.applicationDetails")}</h2>
           </section>
 
           <div style={errorBoxStyle}>
@@ -133,23 +144,41 @@ export default function ApplicationDetailsPage() {
             style={backDashboardButtonStyle}
             onClick={() => router.push("/student")}
           >
-            BACK TO DASHBOARD
+            {t("student.application.backToDashboard")}
           </button>
 
-          <h2 style={pageTitleStyle}>APPLICATIONS DETAILS</h2>
+          <h2 style={pageTitleStyle}>{t("student.application.applicationDetails")}</h2>
         </section>
 
         <section style={summaryRowStyle}>
-          <SummaryItem label="APP ID" value={application.applicationId} />
-          <SummaryItem label="UNIVERSITY" value={application.university} />
-          <SummaryItem label="COURSE" value={application.course} />
-          <SummaryItem label="INTAKE" value={application.intake} />
-          <SummaryItem label="SUBMITTED" value={application.submittedOn} />
-          <SummaryItem label="STATUS" value={application.status} />
+          <SummaryItem label={t("student.application.colAppId")} value={application.applicationId} />
+          <SummaryItem label={t("student.application.colUniversity")} value={application.university} />
+          <SummaryItem label={t("student.application.colCourse")} value={application.course} />
+          <SummaryItem label={t("student.application.colIntake")} value={application.intake} />
+          <SummaryItem label={t("student.application.colSubmitted")} value={application.submittedOn} />
+          <SummaryItem label={t("student.application.colStatus")} value={application.status} />
         </section>
 
+        {/* Show submit/pay banner for any Draft application that hasn't been paid yet.
+            Agent-created drafts have no paymentStatus field, so we check status === "Draft". */}
+        {application.paymentStatus !== "paid" && application.status?.toLowerCase() === "draft" && (
+          <section style={{ maxWidth: "1400px", margin: "0 auto 24px", padding: "16px 24px", background: "#fff", border: "2px solid #EF5350", display: "flex", alignItems: "center", justifyContent: "space-between", boxSizing: "border-box" }}>
+            <div>
+              <strong style={{ fontSize: "15px", color: "#EF5350" }}>{t("student.application.feeRequired")}</strong>
+              <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#555" }}>{t("student.application.feeDesc")}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push(`/student/application/${applicationDocumentId}/payment`)}
+              style={{ background: "#3B2E5A", color: "#fff", border: "none", padding: "12px 24px", fontSize: "13px", fontWeight: "900", cursor: "pointer", whiteSpace: "nowrap" }}
+            >
+              {t("student.application.payNow")}
+            </button>
+          </section>
+        )}
+
         <section style={progressBoxStyle}>
-          <p style={progressTitleStyle}>APPLICATION PROGRESS</p>
+          <p style={progressTitleStyle}>{t("student.application.progressTitle")}</p>
 
           <div style={progressLineWrapperStyle}>
             {application.progressSteps.map((step, index) => (
@@ -168,67 +197,69 @@ export default function ApplicationDetailsPage() {
           </div>
         </section>
 
-        <DetailsSection title="A. PERSONAL INFORMATION">
-          <DetailsLine label="FULL NAME:" value={application.fullName} />
-          <DetailsLine label="DATE OF BIRTH:" value={application.dateOfBirth} />
-          <DetailsLine label="NATIONALITY:" value={application.nationality} />
+        <DetailsSection title={t("student.application.personalInfo")}>
+          <DetailsLine label={t("student.application.fullName")} value={application.fullName} />
+          <DetailsLine label={t("student.application.dateOfBirth")} value={application.dateOfBirth} />
+          <DetailsLine label={t("student.application.nationality")} value={application.nationality} />
           <DetailsLine
-            label="PASSPORT NUMBER:"
+            label={t("student.application.passportNumber")}
             value={application.passportNumber}
           />
         </DetailsSection>
 
-        <DetailsSection title="B. ACADEMIC INFORMATION">
+        <DetailsSection title={t("student.application.academicInfo")}>
           <DetailsLine
-            label="HIGHEST QUALIFICATION:"
+            label={t("student.application.highestQualification")}
             value={application.highestQualification}
           />
           <DetailsLine
-            label="INSTITUTION NAME:"
+            label={t("student.application.institutionName")}
             value={application.institutionName}
           />
           <DetailsLine
-            label="GRADUATION YEAR:"
+            label={t("student.application.graduationYear")}
             value={application.graduationYear}
           />
-          <DetailsLine label="GPA/GRADE:" value={application.gpaGrade} />
+          <DetailsLine label={t("student.application.gpaGrade")} value={application.gpaGrade} />
         </DetailsSection>
 
-        <DetailsSection title="C. COURSE INFORMATION">
+        <DetailsSection title={t("student.application.courseInfo")}>
           <DetailsLine
-            label="SELECTED UNIVERSITY:"
+            label={t("student.application.selectedUniversity")}
             value={application.university}
           />
-          <DetailsLine label="COURSE NAME:" value={application.course} />
-          <DetailsLine label="INTENDED INTAKE:" value={application.intake} />
+          <DetailsLine label={t("student.application.courseName")} value={application.course} />
+          <DetailsLine label={t("student.application.intendedIntake")} value={application.intake} />
         </DetailsSection>
 
-        <DetailsSection title="D. UPLOADED DOCUMENTS">
+        <DetailsSection title={t("student.application.uploadedDocs")}>
           <DocumentItem
-            title="PASSPORT COPY"
+            title={t("student.application.passportCopy")}
             documentData={application.documents.passport}
+            t={t}
           />
 
           <DocumentItem
-            title="ACADEMIC TRANSCRIPT"
+            title={t("student.application.academicTranscript")}
             documentData={application.documents.transcript}
+            t={t}
           />
 
           <DocumentItem
-            title="CERTIFICATES"
+            title={t("student.application.certificates")}
             documentData={application.documents.certificates}
+            t={t}
           />
 
           <DocumentItem
-            title="ENGLISH LANGUAGE TEST"
+            title={t("student.application.englishTest")}
             documentData={application.documents.englishTest}
+            t={t}
           />
         </DetailsSection>
 
         <section style={noteBoxStyle}>
-          <strong>NOTE :</strong> AVERAGE REVIEW TIME IS 2-4 WEEKS. YOU CAN
-          TRACK YOUR APPLICATION PROGRESS AT ANY TIME FROM THE DASHBOARD OR
-          APPLICATION DETAILS PAGE.
+          <strong>{t("student.application.note")}</strong> {t("student.application.noteText")}
         </section>
 
 
@@ -238,6 +269,7 @@ export default function ApplicationDetailsPage() {
 }
 
 function Header({ onLogout }) {
+  const { t } = useLanguage();
   return (
     <header style={headerStyle}>
       <div>
@@ -250,13 +282,16 @@ function Header({ onLogout }) {
         </p>
       </div>
 
-      <button
-        type="button"
-        style={logoutButtonStyle}
-        onClick={onLogout}
-      >
-        LOGOUT
-      </button>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <LanguageSwitcher />
+        <button
+          type="button"
+          style={logoutButtonStyle}
+          onClick={onLogout}
+        >
+          {t("nav.logout")}
+        </button>
+      </div>
     </header>
   );
 }
@@ -288,8 +323,10 @@ function DetailsLine({ label, value }) {
   );
 }
 
-function DocumentItem({ title, documentData }) {
-  const uploaded = Boolean(documentData?.name);
+function DocumentItem({ title, documentData, t }) {
+  // Support both old {name} format and new {provided} checklist format
+  const ready = Boolean(documentData?.provided || documentData?.name || documentData?.url);
+  const label = documentData?.name || (documentData?.provided ? "Marked as ready" : null);
 
   return (
     <div style={documentItemStyle}>
@@ -298,14 +335,14 @@ function DocumentItem({ title, documentData }) {
       <div style={documentTextStyle}>
         <p style={documentTitleStyle}>{title}</p>
         <p style={documentNameStyle}>
-          {uploaded ? documentData.name : "No file selected"}
+          {label || t("student.application.noFile")}
         </p>
       </div>
 
-      <span style={documentCheckStyle}>{uploaded ? "✓" : ""}</span>
+      <span style={documentCheckStyle}>{ready ? "✓" : ""}</span>
 
-      <strong style={uploaded ? uploadedTextStyle : notUploadedTextStyle}>
-        {uploaded ? "UPLOADED" : "NOT UPLOADED"}
+      <strong style={ready ? uploadedTextStyle : notUploadedTextStyle}>
+        {ready ? t("student.application.uploaded") : t("student.application.notUploaded")}
       </strong>
     </div>
   );
@@ -337,17 +374,13 @@ function normaliseApplication(documentId, data) {
     ),
 
     course: formatDisplayValue(
-      data?.courseName ||
-        data?.course ||
-        data?.selectedCourse ||
-        data?.programmeName
+      data?.courseName || data?.courseInfo?.courseName ||
+        data?.course || data?.selectedCourse || data?.programmeName
     ),
 
     intake: formatDisplayValue(
-      data?.intendedIntake ||
-        data?.intake ||
-        data?.startDate ||
-        data?.intakeDate
+      data?.intendedIntake || data?.courseInfo?.intendedStartDate ||
+        data?.intake || data?.startDate || data?.intakeDate
     ),
 
     submittedOn: formatDate(
@@ -360,59 +393,69 @@ function normaliseApplication(documentId, data) {
     status: formatDisplayValue(status),
 
     fullName: formatDisplayValue(
-      data?.fullName || data?.studentName || data?.displayName
+      data?.fullName || data?.studentName || data?.displayName ||
+      ((data?.personalInfo?.firstName || data?.personalInfo?.lastName)
+        ? `${data.personalInfo.firstName || ""} ${data.personalInfo.lastName || ""}`.trim()
+        : null)
     ),
 
-    dateOfBirth: formatDisplayValue(data?.dateOfBirth || data?.dob),
+    dateOfBirth: formatDisplayValue(
+      data?.dateOfBirth || data?.dob || data?.personalInfo?.dateOfBirth
+    ),
 
-    nationality: formatDisplayValue(data?.nationality),
+    nationality: formatDisplayValue(
+      data?.nationality || data?.personalInfo?.nationality
+    ),
 
-    passportNumber: formatDisplayValue(data?.passportNumber),
+    passportNumber: formatDisplayValue(
+      data?.passportNumber || data?.personalInfo?.passportNumber
+    ),
 
-    highestQualification: formatDisplayValue(data?.highestQualification),
+    highestQualification: formatDisplayValue(
+      data?.highestQualification || data?.academicInfo?.highestQualification
+    ),
 
-    institutionName: formatDisplayValue(data?.institutionName),
+    institutionName: formatDisplayValue(
+      data?.institutionName || data?.academicInfo?.institutionName
+    ),
 
-    graduationYear: formatDisplayValue(data?.graduationYear),
+    graduationYear: formatDisplayValue(
+      data?.graduationYear || data?.academicInfo?.graduationYear
+    ),
 
-    gpaGrade: formatDisplayValue(data?.gpaGrade || data?.grade || data?.gpa),
+    gpaGrade: formatDisplayValue(
+      data?.gpaGrade || data?.grade || data?.gpa || data?.academicInfo?.gpaGrade
+    ),
 
     documents: normaliseDocuments(data),
 
     progressSteps: getProgressSteps(status),
+
+    paymentStatus: data?.paymentStatus || null,
+
+    id: documentId,
   };
 }
 
 function normaliseDocuments(data) {
   const documents = data?.documents || {};
+  const saved = data?._studentDocuments || {};
+
+  function resolve(key, ...fallbacks) {
+    // Check studentDocuments collection first (new checklist format)
+    if (saved[key]) return saved[key];
+    // Then check application document fields
+    for (const f of fallbacks) {
+      if (f) return f;
+    }
+    return null;
+  }
 
   return {
-    passport:
-      documents?.passport ||
-      data?.passport ||
-      data?.passportCopy ||
-      data?.passportDocument ||
-      null,
-
-    transcript:
-      documents?.transcript ||
-      documents?.academicTranscripts ||
-      data?.transcript ||
-      data?.academicTranscripts ||
-      null,
-
-    certificates:
-      documents?.certificates ||
-      data?.certificates ||
-      data?.certificate ||
-      null,
-
-    englishTest:
-      documents?.englishTest ||
-      documents?.englishLanguageTest ||
-      data?.englishTest ||
-      data?.englishLanguageTest ||
-      null,
+    passport:     resolve("passport",     documents?.passport, data?.passport, data?.passportCopy),
+    transcript:   resolve("transcript",   documents?.transcript, documents?.academicTranscripts, data?.transcript),
+    certificates: resolve("certificates", documents?.certificates, data?.certificates),
+    englishTest:  resolve("englishTest",  documents?.englishTest, documents?.englishLanguageTest, data?.englishTest),
   };
 }
 

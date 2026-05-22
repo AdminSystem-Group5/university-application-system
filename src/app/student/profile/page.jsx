@@ -1,3 +1,4 @@
+// student profile page
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,9 +7,12 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function StudentProfilePage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [student, setStudent] = useState(null);
   const [firebaseUser, setFirebaseUser] = useState(null);
@@ -101,7 +105,7 @@ export default function StudentProfilePage() {
   if (loading) {
     return (
       <main style={pageStyle}>
-        <div style={loadingBoxStyle}>Loading profile...</div>
+        <div style={loadingBoxStyle}>{t("student.profile.loading")}</div>
       </main>
     );
   }
@@ -112,7 +116,7 @@ export default function StudentProfilePage() {
         <div style={loadingBoxStyle}>
           <p style={errorTextStyle}>{errorMessage}</p>
           <button style={purpleButtonStyle} onClick={() => router.push("/student")}>
-            BACK TO DASHBOARD
+            {t("student.profile.backToDashboard")}
           </button>
         </div>
       </main>
@@ -133,9 +137,9 @@ export default function StudentProfilePage() {
           </div>
 
           <nav style={topNavStyle}>
-           
+            <LanguageSwitcher />
             <button style={navButtonStyle} onClick={handleLogout}>
-              LOGOUT
+              {t("nav.logout")}
             </button>
           </nav>
         </header>
@@ -143,51 +147,51 @@ export default function StudentProfilePage() {
         <section style={contentWrapperStyle}>
           <section style={mainPanelStyle}>
             <section style={quickActionsStyle}>
-              <p style={quickActionsTitleStyle}>QUICK ACTIONS</p>
+              <p style={quickActionsTitleStyle}>{t("student.profile.quickActions")}</p>
 
               <div style={quickActionsButtonsStyle}>
                 <button
                   style={actionButtonStyle}
                   onClick={() => router.push("/student/application/new")}
                 >
-                  START NEW APPLICATION
+                  {t("student.profile.startNewApplication")}
                 </button>
 
                 <button
                   style={actionButtonStyle}
                   onClick={() => router.push("/student")}
                 >
-                  VIEW ALL APPLICATIONS
+                  {t("student.profile.viewAllApplications")}
                 </button>
 
                 <button
                   style={actionButtonStyle}
                   onClick={() => router.push("/student/documents")}
                 >
-                  UPLOAD DOCUMENTS
+                  {t("student.profile.uploadDocuments")}
                 </button>
               </div>
             </section>
 
             <section style={profileBoxStyle}>
-              <ProfileSection title="A. PERSONAL INFORMATION">
-                <ProfileRow label="FULL NAME:" value={fullName} />
-                <ProfileRow label="EMAIL ADDRESS:" value={emailAddress} />
-                <ProfileRow label="NATIONALITY:" value={nationality} />
+              <ProfileSection title={t("student.profile.personalInfo")}>
+                <ProfileRow label={t("student.profile.fullName")} value={fullName} />
+                <ProfileRow label={t("student.profile.emailAddress")} value={emailAddress} />
+                <ProfileRow label={t("student.profile.nationality")} value={nationality} />
                 <ProfileRow
-                  label="INTENDED LEVEL OF STUDY:"
+                  label={t("student.profile.levelOfStudy")}
                   value={intendedLevelOfStudy}
                 />
               </ProfileSection>
 
-              <ProfileSection title="B. ACCOUNT INFORMATION">
-                <ProfileRow label="ROLE:" value={role} />
+              <ProfileSection title={t("student.profile.accountInfo")}>
+                <ProfileRow label={t("student.profile.role")} value={role} />
                 <ProfileRow
-                  label="EMAIL VERIFICATION STATUS:"
-                  value={emailVerificationStatus}
+                  label={t("student.profile.emailVerification")}
+                  value={firebaseUser?.emailVerified || student?.emailVerified ? t("student.profile.verified") : t("student.profile.notVerified")}
                 />
                 <ProfileRow
-                  label="ACCOUNT CREATED DATE:"
+                  label={t("student.profile.accountCreated")}
                   value={accountCreatedDate}
                 />
               </ProfileSection>
@@ -198,7 +202,7 @@ export default function StudentProfilePage() {
               style={backDashboardButtonStyle}
               onClick={() => router.push("/student")}
             >
-              BACK TO DASHBOARD
+              {t("student.profile.backToDashboard")}
             </button>
           </section>
         </section>

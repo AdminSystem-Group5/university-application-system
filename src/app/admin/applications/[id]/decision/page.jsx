@@ -1,3 +1,4 @@
+// admin decision processing page
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +8,8 @@ import {
   getApplicationById,
   updateApplicationStatus,
 } from "@/lib/services/applicationService";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const DECISION_STATUSES = ["Under Review", "Offered", "Rejected"];
 
@@ -48,6 +51,7 @@ export default function DecisionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const { t } = useLanguage();
   const { firebaseUser, userData, isUniversityAdmin, isLoading, signOut } =
     useAuth();
 
@@ -78,13 +82,12 @@ export default function DecisionPage() {
       }
 
       if (!isUniversityAdmin) {
-        alert("Access denied. Admins only.");
         router.push("/login");
         return;
       }
 
       if (!applicationDocumentId) {
-        setErrorMessage("Application ID not found.");
+        setErrorMessage(t("admin.decision.appNotFound"));
         setLoading(false);
         return;
       }
@@ -97,7 +100,7 @@ export default function DecisionPage() {
 
         if (!data) {
           setApplication(null);
-          setErrorMessage("Application not found.");
+          setErrorMessage(t("admin.decision.appNotFound"));
           return;
         }
 
@@ -116,7 +119,7 @@ export default function DecisionPage() {
         setMessageToStudent(messageFromUrl || savedMessage || "");
       } catch (error) {
         console.error("Decision page error:", error);
-        setErrorMessage("Unable to load application decision page.");
+        setErrorMessage(t("admin.decision.unableToLoad"));
       } finally {
         setLoading(false);
       }
@@ -144,7 +147,7 @@ export default function DecisionPage() {
     const finalMessage = cleanMessage(messageToStudent);
 
     if (!finalMessage) {
-      setErrorMessage("Please write a message to the student before confirming.");
+      setErrorMessage(t("admin.decision.writeMsgFirst"));
       return;
     }
 
@@ -163,7 +166,7 @@ export default function DecisionPage() {
     const finalMessage = cleanMessage(messageToStudent);
 
     if (!finalMessage) {
-      setErrorMessage("Please write a message to the student before confirming.");
+      setErrorMessage(t("admin.decision.writeMsgFirst"));
       setShowConfirmModal(false);
       return;
     }
@@ -190,7 +193,7 @@ export default function DecisionPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Confirm decision error:", error);
-      setErrorMessage(error.message || "Unable to confirm decision.");
+      setErrorMessage(error.message || t("admin.decision.unableToConfirm"));
       setShowConfirmModal(false);
     } finally {
       setConfirming(false);
@@ -200,7 +203,7 @@ export default function DecisionPage() {
   if (isLoading || loading) {
     return (
       <main style={pageStyle}>
-        <div style={loadingStyle}>Loading decision page...</div>
+        <div style={loadingStyle}>{t("admin.decision.loading")}</div>
       </main>
     );
   }
@@ -216,7 +219,7 @@ export default function DecisionPage() {
             style={darkButtonStyle}
             onClick={() => router.push("/admin")}
           >
-            BACK TO APPLICATIONS
+            {t("admin.decision.backToApplications")}
           </button>
         </div>
       </main>
@@ -227,14 +230,14 @@ export default function DecisionPage() {
     return (
       <main style={pageStyle}>
         <div style={errorBoxStyle}>
-          <p style={errorTextStyle}>Application not found.</p>
+          <p style={errorTextStyle}>{t("admin.decision.appNotFound")}</p>
 
           <button
             type="button"
             style={darkButtonStyle}
             onClick={() => router.push("/admin")}
           >
-            BACK TO APPLICATIONS
+            {t("admin.decision.backToApplications")}
           </button>
         </div>
       </main>
@@ -255,12 +258,13 @@ export default function DecisionPage() {
           </div>
 
           <nav style={navStyle}>
+            <LanguageSwitcher />
             <button
               type="button"
               style={navButtonStyle}
               onClick={() => router.push("/admin")}
             >
-              DASHBOARD
+              {t("nav.dashboard")}
             </button>
 
             <button
@@ -268,26 +272,25 @@ export default function DecisionPage() {
               style={navButtonStyle}
               onClick={() => router.push("/admin/applications")}
             >
-              APPLICATIONS
+              {t("nav.applications")}
             </button>
 
             <button type="button" style={navButtonStyle} onClick={handleLogout}>
-              LOGOUT
+              {t("nav.logout")}
             </button>
           </nav>
         </header>
 
         <section style={topBarStyle}>
           <div>
-            <h2 style={topBarTitleStyle}>APPLICATION REVIEW</h2>
+            <h2 style={topBarTitleStyle}>{t("admin.decision.applicationReview")}</h2>
             <p style={topBarSubtitleStyle}>
-              REVIEW THE STUDENT DETAILS, DOCUMENTS, AND UPDATE THE APPLICATION
-              STATUS
+              {t("admin.decision.reviewSubtitle")}
             </p>
           </div>
 
           <div style={topBarIdBoxStyle}>
-            <p style={smallLabelStyle}>APPLICATION ID</p>
+            <p style={smallLabelStyle}>{t("admin.decision.applicationId")}</p>
             <strong>
               {application.applicationId || application.id || "APP ID"}
             </strong>
@@ -300,14 +303,14 @@ export default function DecisionPage() {
               <div style={inlineErrorStyle}>{errorMessage}</div>
             )}
 
-            <SectionBox title="DECISION SUMMARY">
+            <SectionBox title={t("admin.decision.decisionSummary")}>
               <InfoRow
-                label="APPLICATION ID:"
+                label={t("admin.decision.applicationIdLabel")}
                 value={application.applicationId || application.id || "N/A"}
               />
 
               <InfoRow
-                label="STUDENT NAME:"
+                label={t("admin.decision.studentName")}
                 value={
                   application.studentName ||
                   application.fullName ||
@@ -317,7 +320,7 @@ export default function DecisionPage() {
               />
 
               <InfoRow
-                label="COURSE:"
+                label={t("admin.decision.course")}
                 value={
                   application.courseName ||
                   application.course ||
@@ -327,7 +330,7 @@ export default function DecisionPage() {
               />
 
               <InfoRow
-                label="SELECTED DECISION:"
+                label={t("admin.decision.selectedDecision")}
                 value={
                   <span style={decisionBadgeStyle(selectedDecision)}>
                     {String(selectedDecision).toUpperCase()}
@@ -336,29 +339,27 @@ export default function DecisionPage() {
               />
             </SectionBox>
 
-            <SectionBox title="MESSAGE TO STUDENT">
-              <label style={textareaLabelStyle}>MESSAGE</label>
+            <SectionBox title={t("admin.decision.messageToStudent")}>
+              <label style={textareaLabelStyle}>{t("admin.decision.message")}</label>
 
               <textarea
                 value={messageToStudent}
                 onChange={(event) => setMessageToStudent(event.target.value)}
                 style={textareaStyle}
-                placeholder="Write a message to the student..."
+                placeholder={t("admin.decision.messagePlaceholder")}
               />
             </SectionBox>
 
-            <SectionBox title="SYSTEM ACTIONS">
-              <CheckItem text="UPDATE APPLICATION STATUS AUTOMATICALLY" />
-              <CheckItem text="CREATE DECISION HISTORY RECORD" />
-              <CheckItem text="NOTIFY STUDENT ON DASHBOARD" />
-              <CheckItem text="SEND DECISION EMAIL TO STUDENT" />
+            <SectionBox title={t("admin.decision.systemActions")}>
+              <CheckItem text={t("admin.decision.action1")} />
+              <CheckItem text={t("admin.decision.action2")} />
+              <CheckItem text={t("admin.decision.action3")} />
+              <CheckItem text={t("admin.decision.action4")} />
             </SectionBox>
 
-            <SectionBox title="IMPORTANT">
+            <SectionBox title={t("admin.decision.important")}>
               <p style={importantTextStyle}>
-                PLEASE REVIEW ALL INFORMATION CAREFULLY BEFORE PROCEEDING. THE
-                ACTION MAY UPDATE THE APPLICATION STATUS, STUDENT DASHBOARD, AND
-                EMAIL NOTIFICATION.
+                {t("admin.decision.importantText")}
               </p>
             </SectionBox>
 
@@ -370,7 +371,7 @@ export default function DecisionPage() {
                   router.push(`/admin/applications/${application.id}`)
                 }
               >
-                BACK TO APPLICATION
+                {t("admin.decision.backToApplication")}
               </button>
 
               <button
@@ -378,7 +379,7 @@ export default function DecisionPage() {
                 style={proceedButtonStyle}
                 onClick={handleOpenConfirmModal}
               >
-                PROCEED
+                {t("admin.decision.proceed")}
               </button>
             </div>
           </section>
@@ -389,25 +390,25 @@ export default function DecisionPage() {
             <div style={blurBackgroundStyle}></div>
 
             <div style={modalBoxStyle}>
-              <div style={modalHeaderStyle}>CONFIRM DECISION</div>
+              <div style={modalHeaderStyle}>{t("admin.decision.confirmDecision")}</div>
 
               <div style={modalBodyStyle}>
                 <p style={modalQuestionStyle}>
-                  ARE YOU SURE YOU WANT TO PROCEED?
+                  {t("admin.decision.areYouSure")}
                 </p>
 
                 <div style={summaryBoxStyle}>
-                  <p style={summaryTitleStyle}>DECISION SUMMARY</p>
+                  <p style={summaryTitleStyle}>{t("admin.decision.decisionSummary")}</p>
 
                   <div style={modalInfoRowStyle}>
-                    <span>APPLICATION ID:</span>
+                    <span>{t("admin.decision.applicationIdLabel")}</span>
                     <strong>
                       {application.applicationId || application.id || "N/A"}
                     </strong>
                   </div>
 
                   <div style={modalInfoRowStyle}>
-                    <span>DECISION:</span>
+                    <span>{t("admin.decision.decisionLabel")}</span>
                     <strong style={modalDecisionBadgeStyle(selectedDecision)}>
                       {String(selectedDecision).toUpperCase()}
                     </strong>
@@ -415,14 +416,14 @@ export default function DecisionPage() {
                 </div>
 
                 <div style={messagePreviewStyle}>
-                  <p style={summaryTitleStyle}>MESSAGE TO STUDENT</p>
+                  <p style={summaryTitleStyle}>{t("admin.decision.messageToStudent")}</p>
                   <p style={messagePreviewTextStyle}>
                     {cleanMessage(messageToStudent)}
                   </p>
                 </div>
 
                 <div style={warningBoxStyle(selectedDecision)}>
-                  THIS ACTION CANNOT BE UNDONE
+                  {t("admin.decision.cannotBeUndone")}
                 </div>
 
                 <div style={modalButtonRowStyle}>
@@ -432,7 +433,7 @@ export default function DecisionPage() {
                     onClick={handleCancelConfirm}
                     disabled={confirming}
                   >
-                    CANCEL
+                    {t("admin.decision.cancel")}
                   </button>
 
                   <button
@@ -441,7 +442,7 @@ export default function DecisionPage() {
                     onClick={handleConfirmDecision}
                     disabled={confirming}
                   >
-                    {confirming ? "CONFIRMING..." : "CONFIRM"}
+                    {confirming ? t("admin.decision.confirming") : t("admin.decision.confirm")}
                   </button>
                 </div>
               </div>

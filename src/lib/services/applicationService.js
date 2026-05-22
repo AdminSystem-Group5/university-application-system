@@ -9,6 +9,7 @@ import {
   query,
   serverTimestamp,
   updateDoc,
+  where,
 } from "firebase/firestore";
 
 import { getFirestoreDb } from "@/lib/firebase";
@@ -25,24 +26,99 @@ export async function getApplicationById(id) {
     return null;
   }
 
+  const data = snapshot.data();
+
+  // Flatten nested objects written by the agent form so all consumers see flat fields.
+  const personalInfo = data.personalInfo  || {};
+  const academicInfo = data.academicInfo  || {};
+  const courseInfo   = data.courseInfo    || {};
+
+  // Load student documents and student email in parallel
+  const [studentDocs, studentEmail] = await Promise.all([
+    fetchStudentDocuments(data.studentId),
+    fetchStudentEmail(data.studentId, data.studentEmail || data.email),
+  ]);
+
   return {
     id: snapshot.id,
-    ...snapshot.data(),
+    ...data,
+    fullName:             data.fullName             || `${personalInfo.firstName || ""} ${personalInfo.lastName || ""}`.trim() || null,
+    dateOfBirth:          data.dateOfBirth          || personalInfo.dateOfBirth          || null,
+    nationality:          data.nationality          || personalInfo.nationality          || null,
+    passportNumber:       data.passportNumber       || personalInfo.passportNumber       || null,
+    highestQualification: data.highestQualification || academicInfo.highestQualification || null,
+    institutionName:      data.institutionName      || academicInfo.institutionName      || null,
+    graduationYear:       data.graduationYear       || academicInfo.graduationYear       || null,
+    gpaGrade:             data.gpaGrade             || academicInfo.gpaGrade             || null,
+    courseName:           data.courseName           || courseInfo.courseName             || null,
+    intendedIntake:       data.intendedIntake        || courseInfo.intendedStartDate      || null,
+    universityName:       data.universityName        || data.selectedUniversity          || null,
+    applicationStatus:    data.applicationStatus    || data.status                      || "Draft",
+    studentName:          data.studentName          || data.fullName                    ||
+                          `${personalInfo.firstName || ""} ${personalInfo.lastName || ""}`.trim() || null,
+    studentEmail:         studentEmail,
+    _studentDocuments:    studentDocs,
   };
 }
 
-export function subscribeToApplications(onApplicationsChange, onError) {
+async function fetchStudentDocuments(studentId) {
+  if (!studentId) return {};
+  try {
+    const db = getFirestoreDb();
+    const snap = await getDoc(doc(db, "studentDocuments", studentId));
+    return snap.exists() ? (snap.data()?.documents || {}) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function fetchStudentEmail(studentId, existingEmail) {
+  if (existingEmail) return existingEmail;
+  if (!studentId) return null;
+  try {
+    const db = getFirestoreDb();
+    const snap = await getDoc(doc(db, "users", studentId));
+    return snap.exists() ? (snap.data()?.email || null) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function subscribeToApplications(onApplicationsChange, onError, universityId = null) {
   const db = getFirestoreDb();
   const applicationsRef = collection(db, "applications");
-  const q = query(applicationsRef, orderBy("submittedAt", "desc"));
+  const q = universityId
+    ? query(applicationsRef, where("universityId", "==", universityId), orderBy("createdAt", "desc"))
+    : query(applicationsRef, orderBy("createdAt", "desc"));
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const applications = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      }));
+      const applications = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        const personalInfo = data.personalInfo || {};
+        const academicInfo = data.academicInfo || {};
+        const courseInfo   = data.courseInfo   || {};
+        return {
+          id: docSnap.id,
+          ...data,
+          fullName:             data.fullName             || `${personalInfo.firstName || ""} ${personalInfo.lastName || ""}`.trim() || null,
+          dateOfBirth:          data.dateOfBirth          || personalInfo.dateOfBirth          || null,
+          nationality:          data.nationality          || personalInfo.nationality          || null,
+          passportNumber:       data.passportNumber       || personalInfo.passportNumber       || null,
+          highestQualification: data.highestQualification || academicInfo.highestQualification || null,
+          institutionName:      data.institutionName      || academicInfo.institutionName      || null,
+          graduationYear:       data.graduationYear       || academicInfo.graduationYear       || null,
+          gpaGrade:             data.gpaGrade             || academicInfo.gpaGrade             || null,
+          courseName:        data.courseName      || courseInfo.courseName    || null,
+          intendedIntake:    data.intendedIntake  || courseInfo.intendedStartDate || null,
+          universityName:    data.universityName  || data.selectedUniversity || null,
+          // Normalise status + student name for table display
+          applicationStatus: data.applicationStatus || data.status           || "Draft",
+          studentName:       data.studentName     || data.fullName           ||
+                             `${personalInfo.firstName || ""} ${personalInfo.lastName || ""}`.trim() || null,
+        };
+      });
 
       onApplicationsChange(applications);
     },
@@ -124,14 +200,16 @@ export async function updateApplicationStatus(
     previousStatus: oldStatus,
     status: newStatus,
     changedAt: serverTimestamp(),
-    changedBy: adminInfo?.name || "Admin",
-    changedById: adminInfo?.uid || null,
+    changedBy: adminInfo?.uid || null,
+    changedByName: adminInfo?.name || "Admin",
     eventType: "status_change",
   });
 
   if (studentId && finalMessage) {
     await addDoc(collection(db, "notifications"), {
+      userId: studentId,
       studentId,
+      type: "application_status_update",
       applicationId: currentData?.applicationId || id,
       applicationDocumentId: id,
       status: newStatus,
@@ -139,7 +217,6 @@ export async function updateApplicationStatus(
       message: finalMessage,
       read: false,
       createdAt: serverTimestamp(),
-      eventType: "application_status_update",
     });
   }
 

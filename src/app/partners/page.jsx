@@ -1,4 +1,4 @@
-
+// partners page
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -7,9 +7,12 @@ import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function PartnersPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [showLogin, setShowLogin] = useState(false);
 
@@ -55,7 +58,7 @@ export default function PartnersPage() {
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        setErrorMessage("User profile not found.");
+        setErrorMessage(t("login.errors.profileNotFound"));
         setLoading(false);
         return;
       }
@@ -76,21 +79,21 @@ export default function PartnersPage() {
         return;
       }
 
-      setErrorMessage("User role not recognised.");
+      setErrorMessage(t("login.errors.roleUnknown"));
       setLoading(false);
     } catch (error) {
       console.error("Login error:", error);
 
       if (error.code === "auth/invalid-credential") {
-        setErrorMessage("Invalid email or password.");
+        setErrorMessage(t("login.errors.invalidCredential"));
       } else if (error.code === "auth/user-not-found") {
-        setErrorMessage("No account found with this email.");
+        setErrorMessage(t("login.errors.userNotFound"));
       } else if (error.code === "auth/wrong-password") {
-        setErrorMessage("Incorrect password.");
+        setErrorMessage(t("login.errors.wrongPassword"));
       } else if (error.code === "permission-denied") {
-        setErrorMessage("Firestore permission denied.");
+        setErrorMessage(t("login.errors.permissionDenied"));
       } else {
-        setErrorMessage("Login failed. Please try again.");
+        setErrorMessage(t("login.errors.generic"));
       }
 
       setLoading(false);
@@ -106,7 +109,7 @@ export default function PartnersPage() {
             <div className="brand-block">
               <h1 className="logo">UAAMS</h1>
               <p className="subtitle">
-                University Administration & Application Management System
+                {t("nav.subtitle")}
               </p>
             </div>
 
@@ -116,7 +119,7 @@ export default function PartnersPage() {
                 onClick={() => router.push("/")}
                 className="btn btn-outline nav-btn"
               >
-                DASHBOARD
+                {t("nav.dashboard")}
               </button>
 
               <button
@@ -124,17 +127,18 @@ export default function PartnersPage() {
                 onClick={() => router.push("/about")}
                 className="btn btn-outline nav-btn"
               >
-                ABOUT US
+                {t("nav.aboutUs")}
               </button>
             </div>
 
             <div className="topbar-actions">
+              <LanguageSwitcher />
               <button
                 type="button"
                 onClick={openLoginModal}
                 className="btn btn-outline"
               >
-                LOGIN
+                {t("nav.login")}
               </button>
 
               <button
@@ -142,7 +146,7 @@ export default function PartnersPage() {
                 onClick={() => router.push("/register")}
                 className="btn btn-primary"
               >
-                REGISTER
+                {t("nav.register")}
               </button>
             </div>
           </div>
@@ -162,13 +166,11 @@ export default function PartnersPage() {
               }}
             >
               <h1 style={{ color: "#3B2E5A", marginBottom: "12px" }}>
-                OUR PARTNERS
+                {t("partners.title")}
               </h1>
 
               <p style={{ maxWidth: "720px", margin: "0 auto" }}>
-                Discover the institutions connected to the UAAMS platform.
-                We partner with leading universities across the UK to streamline
-                your application process.
+                {t("partners.subtitle")}
               </p>
             </div>
 
@@ -185,9 +187,10 @@ export default function PartnersPage() {
               <PartnerCard
                 title="SOUTHAMPTON SOLENT UNIVERSITY"
                 name="Southampton Solent University"
+                t={t}
               />
 
-              <PartnerCard title="LONDON UNIVERSITY" name="London University" />
+              <PartnerCard title="LONDON UNIVERSITY" name="London University" t={t} />
             </div>
 
             {/* SECOND ROW */}
@@ -200,6 +203,7 @@ export default function PartnersPage() {
               <PartnerCard
                 title="LIVERPOOL UNIVERSITY"
                 name="Liverpool University"
+                t={t}
               />
             </div>
           </div>
@@ -227,7 +231,7 @@ export default function PartnersPage() {
           >
             <div>
               <h4 style={{ marginBottom: "14px", fontWeight: 700 }}>
-                NAVIGATION
+                {t("home.navNavigation")}
               </h4>
 
               <div
@@ -242,14 +246,14 @@ export default function PartnersPage() {
                   onClick={() => router.push("/partners")}
                   style={{ cursor: "pointer" }}
                 >
-                  Partners
+                  {t("home.navPartners")}
                 </span>
 
                 <span
                   onClick={() => router.push("/about")}
                   style={{ cursor: "pointer" }}
                 >
-                  About Us
+                  {t("home.navAboutUs")}
                 </span>
               </div>
             </div>
@@ -258,21 +262,21 @@ export default function PartnersPage() {
               <h4 style={{ marginBottom: "10px", fontWeight: 700 }}>UAAMS</h4>
 
               <p style={{ color: "var(--text-soft)", lineHeight: "1.7" }}>
-                University Administration & Application Management System
+                {t("home.footerDesc")}
               </p>
 
               <p style={{ color: "var(--text-light)", lineHeight: "1.8" }}>
-                Full Address
+                {t("about.footerAddress")}
                 <br />
-                Email Address
+                {t("about.footerEmail")}
                 <br />
-                Full Phone Number
+                {t("about.footerPhone")}
               </p>
             </div>
 
             <div style={{ textAlign: "right" }}>
               <h4 style={{ marginBottom: "14px", fontWeight: 700 }}>
-                SUPPORT
+                {t("home.footerSupport")}
               </h4>
 
               <div
@@ -284,8 +288,8 @@ export default function PartnersPage() {
                   color: "var(--text-soft)",
                 }}
               >
-                <span>Privacy Policy</span>
-                <span>Terms & Conditions</span>
+                <span>{t("home.footerPrivacy")}</span>
+                <span>{t("home.footerTerms")}</span>
               </div>
             </div>
           </div>
@@ -298,7 +302,7 @@ export default function PartnersPage() {
               color: "var(--text-light)",
             }}
           >
-            2026 UAAMS. All rights reserved.
+            {t("home.footerCopyright")}
           </div>
         </footer>
       </div>
@@ -331,14 +335,14 @@ export default function PartnersPage() {
                 fontWeight: 700,
               }}
             >
-              BACK
+              {t("login.back")}
             </button>
 
-            <h3 style={{ marginBottom: "20px" }}>LOGIN</h3>
+            <h3 style={{ marginBottom: "20px" }}>{t("login.title")}</h3>
 
             <form onSubmit={handleLogin}>
               <input
-                placeholder="Email"
+                placeholder={t("login.email")}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -348,7 +352,7 @@ export default function PartnersPage() {
               />
 
               <input
-                placeholder="Password"
+                placeholder={t("login.password")}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -374,7 +378,7 @@ export default function PartnersPage() {
                 className="btn btn-primary"
                 disabled={loading}
               >
-                {loading ? "LOGGING IN..." : "LOGIN"}
+                {loading ? t("login.submitting") : t("login.submit")}
               </button>
             </form>
           </div>
@@ -386,7 +390,7 @@ export default function PartnersPage() {
 
 /* PARTNER CARD */
 
-function PartnerCard({ title, name }) {
+function PartnerCard({ title, name, t }) {
   return (
     <div
       style={{
@@ -416,8 +420,8 @@ function PartnerCard({ title, name }) {
         }}
       >
         <p>{name}</p>
-        <p>University Address</p>
-        <p>University Description</p>
+        <p>{t("partners.universityAddress")}</p>
+        <p>{t("partners.universityDescription")}</p>
       </div>
     </div>
   );

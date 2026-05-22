@@ -1,3 +1,4 @@
+// admin applications list with filters
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -10,9 +11,12 @@ import {
   updateApplicationStatus,
 } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function AdminApplicationsPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const {
     firebaseUser,
@@ -65,7 +69,7 @@ export default function AdminApplicationsPage() {
       },
       (error) => {
         console.error("Error loading applications:", error);
-        setMessage("Failed to load applications.");
+        setMessage(t("admin.dashboard.unableToLoad"));
         setMessageType("error");
         setPageLoading(false);
       }
@@ -157,11 +161,11 @@ export default function AdminApplicationsPage() {
         messageToStudent
       );
 
-      setMessage("Status updated successfully.");
+      setMessage(t("admin.dashboard.submitted"));
       setMessageType("success");
     } catch (error) {
       console.error("Status update error:", error);
-      setMessage(error.message || "Error updating status.");
+      setMessage(error.message || t("admin.dashboard.unableToLoad"));
       setMessageType("error");
     } finally {
       setUpdatingId(null);
@@ -174,7 +178,7 @@ export default function AdminApplicationsPage() {
       router.replace("/login");
     } catch (error) {
       console.error("Logout error:", error);
-      setMessage("Failed to log out. Please try again.");
+      setMessage(t("admin.dashboard.unableToLogout"));
       setMessageType("error");
     }
   };
@@ -241,12 +245,15 @@ export default function AdminApplicationsPage() {
               </p>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="h-20 w-full rounded-3xl bg-red-600 px-12 text-2xl font-black text-white transition hover:bg-red-700 md:h-24 md:max-w-[260px] md:text-3xl"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-4">
+              <LanguageSwitcher />
+              <button
+                onClick={handleLogout}
+                className="h-20 w-full rounded-3xl bg-red-600 px-12 text-2xl font-black text-white transition hover:bg-red-700 md:h-24 md:max-w-[260px] md:text-3xl"
+              >
+                {t("nav.logout")}
+              </button>
+            </div>
           </div>
         </div>
 

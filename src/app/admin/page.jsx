@@ -1,14 +1,18 @@
+// admin dashboard
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { subscribeToApplications } from "@/lib/services/applicationService";
 import { useAuth } from "@/lib/context/auth-context";
+import { useLanguage } from "@/lib/context/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function AdminPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
-  const { firebaseUser, isUniversityAdmin, isLoading, signOut } = useAuth();
+  const { firebaseUser, userData, isUniversityAdmin, isLoading, signOut } = useAuth();
 
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
@@ -34,10 +38,12 @@ export default function AdminPage() {
   }, [firebaseUser, isUniversityAdmin, isLoading, loggingOut, router]);
 
   useEffect(() => {
-    if (!firebaseUser || !isUniversityAdmin) return;
+    if (!firebaseUser || !isUniversityAdmin || !userData) return;
 
     setLoadingData(true);
     setErrorMessage("");
+
+    const universityId = userData.universityId || null;
 
     const unsubscribe = subscribeToApplications(
       (data) => {
@@ -50,9 +56,10 @@ export default function AdminPage() {
         console.error("Error loading applications:", error);
         setApplications([]);
         setFilteredApplications([]);
-        setErrorMessage("Unable to load applications.");
+        setErrorMessage(t("admin.dashboard.unableToLoad"));
         setLoadingData(false);
-      }
+      },
+      universityId
     );
 
     return () => {
@@ -60,7 +67,7 @@ export default function AdminPage() {
         unsubscribe();
       }
     };
-  }, [firebaseUser, isUniversityAdmin]);
+  }, [firebaseUser, isUniversityAdmin, userData]);
 
   useEffect(() => {
     let filtered = [...applications];
@@ -143,7 +150,7 @@ export default function AdminPage() {
       router.replace("/");
     } catch (error) {
       console.error("Logout error:", error);
-      setErrorMessage("Unable to logout. Please try again.");
+      setErrorMessage(t("admin.dashboard.unableToLogout"));
       setLoggingOut(false);
     }
   };
@@ -156,7 +163,7 @@ export default function AdminPage() {
     return (
       <main style={pageStyle}>
         <div style={frameStyle}>
-          <p style={loadingTextStyle}>Loading admin dashboard...</p>
+          <p style={loadingTextStyle}>{t("admin.dashboard.loading")}</p>
         </div>
       </main>
     );
@@ -177,6 +184,7 @@ export default function AdminPage() {
           </div>
 
           <nav style={navStyle}>
+            <LanguageSwitcher />
             <button
               type="button"
               style={{
@@ -186,21 +194,21 @@ export default function AdminPage() {
               onClick={handleLogout}
               disabled={loggingOut}
             >
-              {loggingOut ? "LOGGING OUT..." : "LOGOUT"}
+              {loggingOut ? t("nav.loggingOut") : t("nav.logout")}
             </button>
           </nav>
         </header>
 
         <section style={welcomeBoxStyle}>
-          <h2 style={welcomeTitleStyle}>WELCOME ADMIN</h2>
+          <h2 style={welcomeTitleStyle}>{t("admin.dashboard.welcomeAdmin")}</h2>
         </section>
 
         <section style={statsRowStyle}>
-          <StatCard label="TOTAL APPLICATIONS" value={stats.total} />
-          <StatCard label="SUBMITTED" value={stats.submitted} />
-          <StatCard label="UNDER REVIEW" value={stats.underReview} />
-          <StatCard label="OFFERED" value={stats.offered} />
-          <StatCard label="REJECTED" value={stats.rejected} />
+          <StatCard label={t("admin.dashboard.totalApplications")} value={stats.total} />
+          <StatCard label={t("admin.dashboard.submitted")} value={stats.submitted} />
+          <StatCard label={t("admin.dashboard.underReview")} value={stats.underReview} />
+          <StatCard label={t("admin.dashboard.offered")} value={stats.offered} />
+          <StatCard label={t("admin.dashboard.rejected")} value={stats.rejected} />
         </section>
 
         <section style={filtersBoxStyle}>
@@ -212,7 +220,7 @@ export default function AdminPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="SEARCH BY STUDENT NAME OR APPLICATION ID"
+                placeholder={t("admin.dashboard.searchPlaceholder")}
                 style={searchInputStyle}
               />
             </div>
@@ -222,34 +230,34 @@ export default function AdminPage() {
               onChange={(e) => setStatusFilter(e.target.value)}
               style={statusSelectStyle}
             >
-              <option value="">ALL STATUSES</option>
-              <option value="Submitted">SUBMITTED</option>
-              <option value="Under Review">UNDER REVIEW</option>
-              <option value="Offered">OFFERED</option>
-              <option value="Rejected">REJECTED</option>
+              <option value="">{t("admin.dashboard.allStatuses")}</option>
+              <option value="Submitted">{t("admin.dashboard.submitted")}</option>
+              <option value="Under Review">{t("admin.dashboard.underReview")}</option>
+              <option value="Offered">{t("admin.dashboard.offered")}</option>
+              <option value="Rejected">{t("admin.dashboard.rejected")}</option>
             </select>
           </div>
 
           <p style={resultsTextStyle}>
-            SHOWING {filteredApplications.length} RESULTS
+            {t("admin.dashboard.showing")} {filteredApplications.length} {t("admin.dashboard.results")}
           </p>
         </section>
 
         {errorMessage && <p style={errorTextStyle}>{errorMessage}</p>}
 
         <section style={tableWrapperStyle}>
-          <div style={tableTitleBarStyle}>APPLICATIONS OVERVIEW</div>
+          <div style={tableTitleBarStyle}>{t("admin.dashboard.applicationsOverview")}</div>
 
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={tableHeadStyle}>APPLICATION ID</th>
-                <th style={tableHeadStyle}>STUDENT NAME</th>
-                <th style={tableHeadStyle}>COURSE</th>
-                <th style={tableHeadStyle}>INTAKE</th>
-                <th style={tableHeadStyle}>STATUS</th>
-                <th style={tableHeadStyle}>DATE SUBMITTED</th>
-                <th style={tableHeadStyle}>ACTION</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colAppId")}</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colStudentName")}</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colCourse")}</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colIntake")}</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colStatus")}</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colDateSubmitted")}</th>
+                <th style={tableHeadStyle}>{t("admin.dashboard.colAction")}</th>
               </tr>
             </thead>
 
@@ -257,7 +265,7 @@ export default function AdminPage() {
               {filteredApplications.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={emptyCellStyle}>
-                    No applications found.
+                    {t("admin.dashboard.noApplications")}
                   </td>
                 </tr>
               ) : (
@@ -305,7 +313,7 @@ export default function AdminPage() {
                             handleReviewApplication(applicationId)
                           }
                         >
-                          REVIEW
+                          {t("admin.dashboard.review")}
                         </button>
                       </td>
                     </tr>
