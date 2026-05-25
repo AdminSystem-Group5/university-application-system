@@ -16,6 +16,7 @@ export default function UploadDocumentsPage() {
   });
 
   const [errorMessage, setErrorMessage] = useState("");
+  const [showDraftPopup, setShowDraftPopup] = useState(false);
 
   const passportInputRef = useRef(null);
   const transcriptInputRef = useRef(null);
@@ -86,51 +87,51 @@ export default function UploadDocumentsPage() {
       JSON.stringify(uploadedFileSummary)
     );
 
-    alert("Document draft saved successfully.");
+    setShowDraftPopup(true);
   };
 
   const handleContinueToReview = () => {
     const documentData = {
-        passport: files.passport
+      passport: files.passport
         ? {
             name: files.passport.name,
             size: files.passport.size,
             type: files.passport.type,
-            }
+          }
         : null,
 
-        transcript: files.transcript
+      transcript: files.transcript
         ? {
             name: files.transcript.name,
             size: files.transcript.size,
             type: files.transcript.type,
-            }
+          }
         : null,
 
-        certificates: files.certificates
+      certificates: files.certificates
         ? {
             name: files.certificates.name,
             size: files.certificates.size,
             type: files.certificates.type,
-            }
+          }
         : null,
 
-        englishTest: files.englishTest
+      englishTest: files.englishTest
         ? {
             name: files.englishTest.name,
             size: files.englishTest.size,
             type: files.englishTest.type,
-            }
+          }
         : null,
     };
 
-  sessionStorage.setItem(
-    "uaams_new_application_documents",
-    JSON.stringify(documentData)
-  );
+    sessionStorage.setItem(
+      "uaams_new_application_documents",
+      JSON.stringify(documentData)
+    );
 
-  router.push("/student/application/new/review");
-    };
+    router.push("/student/application/new/review");
+  };
 
   const handleLogout = async () => {
     const auth = getFirebaseAuth();
@@ -275,6 +276,26 @@ export default function UploadDocumentsPage() {
           </div>
         </section>
       </div>
+
+      {showDraftPopup && (
+        <div style={popupOverlayStyle}>
+          <div style={popupBoxStyle}>
+            <h2 style={popupTitleStyle}>DRAFT SAVED</h2>
+
+            <p style={popupMessageStyle}>
+              Document draft saved successfully.
+            </p>
+
+            <button
+              type="button"
+              style={popupButtonStyle}
+              onClick={() => setShowDraftPopup(false)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -383,7 +404,6 @@ const pageStyle = {
 const frameStyle = {
   minHeight: "calc(100vh - 20px)",
   width: "100%",
-
   background: "#F7F1E8",
   display: "flex",
   flexDirection: "column",
@@ -679,4 +699,49 @@ const primaryButtonStyle = {
   fontSize: "13px",
   fontWeight: "800",
   cursor: "pointer",
+};
+
+const popupOverlayStyle = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0, 0, 0, 0.55)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 9999,
+};
+
+const popupBoxStyle = {
+  width: "420px",
+  background: "#fff",
+  border: "2px solid #000",
+  padding: "32px",
+  boxSizing: "border-box",
+  textAlign: "left",
+};
+
+const popupTitleStyle = {
+  margin: "0 0 22px",
+  fontSize: "22px",
+  fontWeight: "900",
+  color: "#000",
+};
+
+const popupMessageStyle = {
+  margin: "0 0 28px",
+  fontSize: "15px",
+  fontWeight: "700",
+  color: "#000",
+  lineHeight: "1.5",
+};
+
+const popupButtonStyle = {
+  background: "#5B35D5",
+  color: "#fff",
+  border: "none",
+  padding: "14px 34px",
+  fontSize: "14px",
+  fontWeight: "900",
+  cursor: "pointer",
+  boxShadow: "0 12px 24px rgba(91, 53, 213, 0.25)",
 };

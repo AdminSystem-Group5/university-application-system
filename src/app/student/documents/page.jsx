@@ -708,3 +708,4 @@ const loadingBoxStyle = {
   fontSize: "24px",
   fontWeight: "900",
 };
+
