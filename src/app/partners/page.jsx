@@ -98,8 +98,22 @@ export default function PartnersPage() {
   };
 
   return (
-    <main className="home-page">
-      <div style={{ filter: showLogin ? "blur(4px)" : "none" }}>
+    <main
+  className="home-page"
+  style={{
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+  }}
+>
+      <div
+  style={{
+    filter: showLogin ? "blur(4px)" : "none",
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+  }}
+>
         {/* HEADER */}
         <header className="topbar">
           <div className="container topbar-content">
@@ -208,10 +222,10 @@ export default function PartnersPage() {
         {/* FOOTER */}
         <footer
           style={{
-            marginTop: "16px",
-            borderTop: "1px solid rgba(0,0,0,0.18)",
-            background: "rgba(255,255,255,0.35)",
-            backdropFilter: "blur(6px)",
+            marginTop: "auto",
+    borderTop: "1px solid rgba(0,0,0,0.18)",
+    background: "rgba(255,255,255,0.35)",
+    backdropFilter: "blur(6px)",
           }}
         >
           <div

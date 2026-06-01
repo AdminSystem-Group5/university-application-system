@@ -97,8 +97,22 @@ export default function AboutPage() {
   };
 
   return (
-    <main className="home-page">
-      <div style={{ filter: showLogin ? "blur(4px)" : "none" }}>
+    <main
+  className="home-page"
+  style={{
+    minHeight: "100vh",
+    display: "flex",
+    flexDirection: "column",
+  }}
+>
+      <div
+  style={{
+    filter: showLogin ? "blur(4px)" : "none",
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+  }}
+>
         {/* HEADER */}
         <header className="topbar">
           <div className="container topbar-content">
@@ -238,105 +252,64 @@ export default function AboutPage() {
 
         {/* FOOTER */}
         <footer
+        style={{
+          borderTop: "1px solid rgba(0,0,0,0.18)",
+          background: "rgba(255,255,255,0.35)",
+          marginTop: "auto",
+        }}
+      >
+        <div
+          className="container"
           style={{
-            marginTop: "16px",
-            borderTop: "1px solid rgba(0,0,0,0.18)",
-            background: "rgba(255,255,255,0.35)",
-            backdropFilter: "blur(6px)",
+            display: "grid",
+            gridTemplateColumns: "1fr 1.2fr 1fr",
+            gap: "32px",
+            padding: "28px 0",
           }}
         >
-          <div
-            className="container"
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1.2fr 1fr",
-              gap: "32px",
-              paddingTop: "28px",
-              paddingBottom: "20px",
-              alignItems: "start",
-            }}
-          >
-            {/* NAVIGATION */}
-            <div>
-              <h4 style={{ marginBottom: "14px", fontWeight: 700 }}>
-                NAVIGATION
-              </h4>
+          <div>
+            <h4>NAVIGATION</h4>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  color: "var(--text-soft)",
-                }}
-              >
-                <span
-                  onClick={() => router.push("/partners")}
-                  style={{ cursor: "pointer" }}
-                >
-                  Partners
-                </span>
+            <p
+              onClick={() => router.push("/partners")}
+              style={{ cursor: "pointer" }}
+            >
+              Partners
+            </p>
 
-                <span
-                  onClick={() => router.push("/about")}
-                  style={{ cursor: "pointer" }}
-                >
-                  About Us
-                </span>
-              </div>
-            </div>
-
-            {/* CENTER INFO */}
-            <div style={{ textAlign: "center" }}>
-              <h4 style={{ marginBottom: "10px", fontWeight: 700 }}>
-                UAAMS
-              </h4>
-
-              <p style={{ color: "var(--text-soft)", lineHeight: "1.7" }}>
-                University Administration & Application Management System
-              </p>
-
-              <p style={{ color: "var(--text-light)", lineHeight: "1.8" }}>
-                Full Address
-                <br />
-                Email Address
-                <br />
-                Full Phone Number
-              </p>
-            </div>
-
-            {/* SUPPORT */}
-            <div style={{ textAlign: "right" }}>
-              <h4 style={{ marginBottom: "14px", fontWeight: 700 }}>
-                SUPPORT
-              </h4>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                  alignItems: "flex-end",
-                  color: "var(--text-soft)",
-                }}
-              >
-                <span>Privacy Policy</span>
-                <span>Terms & Conditions</span>
-              </div>
-            </div>
+            <p
+              onClick={() => router.push("/about")}
+              style={{ cursor: "pointer" }}
+            >
+              About Us
+            </p>
           </div>
 
-          <div
-            style={{
-              borderTop: "1px solid rgba(0,0,0,0.12)",
-              textAlign: "center",
-              padding: "14px",
-              color: "var(--text-light)",
-            }}
-          >
-            2026 UAAMS. All rights reserved.
+          <div style={{ textAlign: "center" }}>
+            <h4>UAAMS</h4>
+
+            <p>University Administration & Application Management System</p>
           </div>
-        </footer>
+
+          <div style={{ textAlign: "right" }}>
+            <h4>SUPPORT</h4>
+
+            <p>Privacy Policy</p>
+            <p>Terms & Conditions</p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            borderTop: "1px solid rgba(0,0,0,0.12)",
+            textAlign: "center",
+            padding: "12px 0",
+            fontSize: "0.85rem",
+          }}
+        >
+          2026 UAAMS. All rights reserved.
+        </div>
+      </footer>
       </div>
 
       {showLogin && (
